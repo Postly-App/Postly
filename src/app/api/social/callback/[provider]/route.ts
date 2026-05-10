@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
@@ -12,8 +12,7 @@ const TOKEN_ENDPOINTS: Record<string, string> = {
 };
 
 export async function GET(req: Request, { params }: { params: Promise<{ provider: string }> }) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.redirect(new URL("/login", req.url));
+const session = await getServerSession(authOptions);  if (!session?.user?.id) return NextResponse.redirect(new URL("/login", req.url));
 
   const { provider } = await params;
   const url = new URL(req.url);
