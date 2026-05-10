@@ -2,14 +2,21 @@ import Stripe from "stripe"
 import { prisma } from "./prisma"
 import type { Plan } from "@prisma/client"
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "")
 
-const PRICE_TO_PLAN: Record<string, Plan> = {
-  [process.env.STRIPE_PRO_MONTHLY_PRICE_ID!]: "PRO",
-  [process.env.STRIPE_PRO_YEARLY_PRICE_ID!]: "PRO",
-  [process.env.STRIPE_AGENCY_MONTHLY_PRICE_ID!]: "AGENCY",
-  [process.env.STRIPE_AGENCY_YEARLY_PRICE_ID!]: "AGENCY",
-}
+const PRICE_TO_PLAN: Record<string, Plan> = (() => {
+  const entries: Array<[string | undefined, Plan]> = [
+    [process.env.STRIPE_PRO_MONTHLY_PRICE_ID, "PRO"],
+    [process.env.STRIPE_PRO_YEARLY_PRICE_ID, "PRO"],
+    [process.env.STRIPE_AGENCY_MONTHLY_PRICE_ID, "AGENCY"],
+    [process.env.STRIPE_AGENCY_YEARLY_PRICE_ID, "AGENCY"],
+  ]
+  const map: Record<string, Plan> = {}
+  for (const [id, plan] of entries) {
+    if (id && id.length > 0) map[id] = plan
+  }
+  return map
+})()
 
 export function getPlanFromPriceId(priceId: string): Plan {
   return PRICE_TO_PLAN[priceId] ?? "FREE"
@@ -24,8 +31,8 @@ export async function createBillingPortalSession(
     select: { stripeCustomerId: true },
   })
 
-  if (!subscription?.stripeCustomerId) {
-    throw new Error("No Stripe customer found for this user")
+  if (!subscription?.stripeCustomerId || subscription.stripeCustomerId.startsWith("free_")) {
+    throw new Error("No Stripe customer for this user")
   }
 
   const session = await stripe.billingPortal.sessions.create({

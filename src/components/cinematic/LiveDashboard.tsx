@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, type MotionValue } from "framer-motion";
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from "framer-motion";
 
 /* ──────────────────────────────────────────────────────────────
    Hooks
@@ -469,5 +469,3 @@ export default function LiveDashboard() {
   );
 }
 
-// silence unused-import warning if any
-export type _ = MotionValue;

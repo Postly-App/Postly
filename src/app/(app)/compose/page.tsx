@@ -16,30 +16,29 @@ const PLATFORMS = [
   { id: "THREADS",   label: "Threads",   color: "#000",    maxChars: 500 },
 ] as const;
 
-const HASHTAGS = ["#marketing", "#socialmedia", "#contentcreator", "#digitalmarketing", "#stratégie", "#croissance", "#entrepreneur", "#réseauxsociaux"];
-
-const AI_CHIPS = ["Rendre plus engageant", "Ajouter un CTA", "Version courte", "Adapter à TikTok", "Ajouter des emojis"];
+const HASHTAGS = [
+  "#marketing", "#socialmedia", "#contentcreator", "#digitalmarketing",
+  "#stratégie", "#croissance", "#entrepreneur", "#réseauxsociaux",
+];
 
 const AI_SUGGESTIONS = [
   "🚀 On a quelque chose de grand à vous partager aujourd'hui — on travaille dessus depuis des mois et c'est enfin là !",
   "💡 3 choses que personne ne dit sur la croissance de 0 à 10K abonnés :\n\n1. La régularité bat la viralité\n2. L'engagement > la portée\n3. Cible d'abord une niche, puis élargis",
   "✨ Dans les coulisses de notre workflow 2026. Spoiler : l'IA nous a économisé 6h par semaine.",
-  "📊 Ce graphique a changé notre façon de voir le contenu. Ton meilleur post n'est pas forcément le plus aimé.",
 ];
 
 type PublishMode = "now" | "scheduled" | "draft";
-type PlatformId = (typeof PLATFORMS)[number]["id"];
 
 export default function ComposePage() {
   const router = useRouter();
-  const [content, setContent]                   = useState("");
+  const [content, setContent]                     = useState("");
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(["INSTAGRAM", "LINKEDIN"]);
-  const [publishMode, setPublishMode]           = useState<PublishMode>("scheduled");
-  const [scheduledDate, setScheduledDate]       = useState("");
-  const [scheduledTime, setScheduledTime]       = useState("18:00");
-  const [mediaUrls, setMediaUrls]               = useState<string[]>([]);
-  const [loading, setLoading]                   = useState(false);
-  const [error, setError]                       = useState<string | null>(null);
+  const [publishMode, setPublishMode]             = useState<PublishMode>("scheduled");
+  const [scheduledDate, setScheduledDate]         = useState("");
+  const [scheduledTime, setScheduledTime]         = useState("18:00");
+  const [mediaUrls, setMediaUrls]                 = useState<string[]>([]);
+  const [loading, setLoading]                     = useState(false);
+  const [error, setError]                         = useState<string | null>(null);
 
   const togglePlatform = (id: string) => {
     setSelectedPlatforms((prev) =>
@@ -47,16 +46,30 @@ export default function ComposePage() {
     );
   };
 
-  const maxChars = PLATFORMS.find((p) => selectedPlatforms.includes(p.id))?.maxChars ?? 2200;
+  const maxChars = selectedPlatforms.length === 0
+    ? 2200
+    : Math.min(...PLATFORMS.filter((p) => selectedPlatforms.includes(p.id)).map((p) => p.maxChars));
   const charPct  = Math.min((content.length / maxChars) * 100, 100);
   const charWarn = content.length > maxChars * 0.9;
 
-  const handleSubmit = async () => {
-    if (!content.trim() || selectedPlatforms.length === 0) return;
-    if (publishMode === "scheduled" && scheduledDate && new Date(`${scheduledDate}T${scheduledTime}`) <= new Date()) {
-      toast.error("La date de planification doit être dans le futur");
+  const todayStr = new Date().toISOString().slice(0, 10);
+
+  const submitWith = async (mode: PublishMode) => {
+    if (!content.trim() || selectedPlatforms.length === 0) {
+      toast.error("Ajoute du texte et au moins une plateforme.");
       return;
     }
+    if (mode === "scheduled") {
+      if (!scheduledDate) {
+        toast.error("Choisis une date pour planifier.");
+        return;
+      }
+      if (new Date(`${scheduledDate}T${scheduledTime}`) <= new Date()) {
+        toast.error("La date de planification doit être dans le futur.");
+        return;
+      }
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -64,7 +77,7 @@ export default function ComposePage() {
         content,
         platforms: selectedPlatforms,
         mediaUrls,
-        ...(publishMode === "scheduled" && scheduledDate
+        ...(mode === "scheduled"
           ? { scheduledAt: new Date(`${scheduledDate}T${scheduledTime}`).toISOString() }
           : {}),
       };
@@ -73,25 +86,38 @@ export default function ComposePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error("Failed to create post");
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error ?? "Erreur lors de la création du post");
+      }
       const post = await res.json();
-      if (publishMode === "now") {
+      if (mode === "now") {
         await fetch(`/api/posts/${post.id}/publish`, { method: "POST" });
-        toast.info("Publication sur les réseaux sociaux bientôt disponible — ton post a été sauvegardé en brouillon");
-      } else if (publishMode === "scheduled") {
+        toast.info(
+          "Publication directe sur les réseaux sociaux pas encore branchée — le post est sauvegardé en brouillon."
+        );
+      } else if (mode === "scheduled") {
         toast.success("Post planifié avec succès !");
       } else {
         toast.success("Brouillon sauvegardé !");
       }
       router.push("/dashboard");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue");
+      const msg = err instanceof Error ? err.message : "Une erreur est survenue";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
   };
 
-  /* ── styles ─────────────────────────────────────────── */
+  const handlePrimary = () => submitWith(publishMode);
+  const handleSaveDraft = () => submitWith("draft");
+
+  const insertHashtag = (tag: string) => {
+    setContent((prev) => prev + (prev.length === 0 || prev.endsWith(" ") ? "" : " ") + tag);
+  };
+
   const card: React.CSSProperties = {
     background: "var(--clr-card)", border: "1px solid var(--clr-border)", borderRadius: 16,
   };
@@ -102,8 +128,6 @@ export default function ComposePage() {
 
   return (
     <div style={{ padding: "0 28px 32px" }}>
-
-      {/* ── Page header ──────────────────────────────────── */}
       <div style={{
         display: "flex", justifyContent: "space-between", alignItems: "center",
         padding: "24px 4px 20px", flexWrap: "wrap", gap: 12,
@@ -114,15 +138,19 @@ export default function ComposePage() {
         </div>
         <div style={{ display: "flex", gap: 10 }}>
           <button
-            onClick={() => { setPublishMode("draft"); handleSubmit(); }}
+            onClick={handleSaveDraft}
+            disabled={loading || !content.trim() || selectedPlatforms.length === 0}
             style={{
               padding: "9px 18px", borderRadius: 12, border: "1px solid var(--clr-border)",
               background: "var(--clr-card2)", color: "var(--clr-muted)",
-              fontSize: "0.82rem", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font)",
+              fontSize: "0.82rem", fontWeight: 600,
+              cursor: (loading || !content.trim() || selectedPlatforms.length === 0) ? "not-allowed" : "pointer",
+              opacity: (loading || !content.trim() || selectedPlatforms.length === 0) ? 0.5 : 1,
+              fontFamily: "var(--font)",
             }}
           >Sauvegarder</button>
           <button
-            onClick={handleSubmit}
+            onClick={handlePrimary}
             disabled={loading || !content.trim() || selectedPlatforms.length === 0}
             style={{
               padding: "9px 18px", borderRadius: 12, border: "none",
@@ -131,21 +159,15 @@ export default function ComposePage() {
               cursor: (loading || !content.trim() || selectedPlatforms.length === 0) ? "not-allowed" : "pointer",
               opacity: (loading || !content.trim() || selectedPlatforms.length === 0) ? 0.5 : 1,
               fontFamily: "var(--font)", boxShadow: "0 0 16px rgba(124,92,252,0.35)",
-              transition: "var(--transition)",
             }}
           >
-            {loading ? "En cours…" : publishMode === "now" ? "⚡ Publier →" : publishMode === "scheduled" ? "📅 Planifier →" : "📝 Brouillon →"}
+            {loading ? "En cours…" : publishMode === "now" ? "⚡ Publier" : publishMode === "scheduled" ? "📅 Planifier" : "📝 Brouillon"}
           </button>
         </div>
       </div>
 
-      {/* ── Main grid ────────────────────────────────────── */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 20, alignItems: "start" }}>
-
-        {/* ── LEFT: editor ─────────────────────────────── */}
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-
-          {/* Platform selector */}
           <div style={{ ...card, padding: 20 }}>
             <div style={sectionLbl}>Plateformes</div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -162,7 +184,6 @@ export default function ComposePage() {
                       border: sel ? `1px solid ${p.color}60` : "1px solid var(--clr-border)",
                       background: sel ? `${p.color}18` : "transparent",
                       color: sel ? p.color : "var(--clr-muted)",
-                      transition: "var(--transition)",
                     }}
                   ><span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><SocialIcon platform={p.id} size={14} /> {p.label}</span></button>
                 );
@@ -170,7 +191,6 @@ export default function ComposePage() {
             </div>
           </div>
 
-          {/* Text editor */}
           <div style={{ ...card, padding: 20 }}>
             <label htmlFor="editor-text" style={sectionLbl}>Contenu</label>
             <textarea
@@ -178,7 +198,7 @@ export default function ComposePage() {
               value={content}
               onChange={(e) => setContent(e.target.value)}
               maxLength={maxChars > 63000 ? undefined : maxChars}
-              placeholder="Rédigez votre publication ici... L'IA peut vous aider à l'améliorer ✦"
+              placeholder="Rédigez votre publication ici…"
               rows={8}
               style={{
                 width: "100%", background: "transparent", border: "none",
@@ -187,19 +207,11 @@ export default function ComposePage() {
                 boxSizing: "border-box",
               }}
             />
-            {/* Editor toolbar */}
             <div style={{
               display: "flex", alignItems: "center", gap: 6,
               paddingTop: 14, borderTop: "1px solid var(--clr-border)", marginTop: 4, flexWrap: "wrap",
             }}>
               <Upload onUploaded={(urls) => setMediaUrls((prev) => [...prev, ...urls])} />
-              {[["🏷️", "Hashtags"], ["😊", "Emoji"], ["🔗", "Lien"]].map(([icon, label]) => (
-                <button key={label} style={{
-                  padding: "6px 12px", borderRadius: 8, border: "1px solid var(--clr-border)",
-                  background: "var(--clr-card2)", color: "var(--clr-muted)",
-                  fontSize: "0.78rem", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font)",
-                }}>{icon} {label}</button>
-              ))}
               {mediaUrls.length > 0 && (
                 <span style={{ fontSize: "0.72rem", color: "#22D3A0", fontWeight: 700, marginLeft: 4 }}>
                   {mediaUrls.length} fichier{mediaUrls.length > 1 ? "s" : ""} uploadé{mediaUrls.length > 1 ? "s" : ""}
@@ -215,7 +227,6 @@ export default function ComposePage() {
                 {content.length.toLocaleString("fr-FR")} / {maxChars.toLocaleString("fr-FR")}
               </span>
             </div>
-            {/* Char progress */}
             <div style={{ height: 2, background: "rgba(255,255,255,0.06)", borderRadius: 2, marginTop: 8 }}>
               <div style={{
                 height: "100%", borderRadius: 2, transition: "width 0.2s",
@@ -225,10 +236,8 @@ export default function ComposePage() {
             </div>
           </div>
 
-          {/* Schedule */}
           <div style={{ ...card, padding: 20 }}>
             <div style={sectionLbl}>⏱️ Planification</div>
-            {/* Mode buttons */}
             <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
               {(["scheduled", "now", "draft"] as PublishMode[]).map((mode) => (
                 <button key={mode} onClick={() => setPublishMode(mode)}
@@ -238,7 +247,6 @@ export default function ComposePage() {
                     border: publishMode === mode ? "1px solid rgba(124,92,252,0.4)" : "1px solid var(--clr-border)",
                     background: publishMode === mode ? "rgba(124,92,252,0.15)" : "transparent",
                     color: publishMode === mode ? "var(--clr-primary-h)" : "var(--clr-muted)",
-                    transition: "var(--transition)",
                   }}
                 >
                   {mode === "scheduled" ? "📅 Planifier" : mode === "now" ? "⚡ Maintenant" : "📝 Brouillon"}
@@ -251,6 +259,7 @@ export default function ComposePage() {
                   <label style={{ ...sectionLbl, marginBottom: 6 }}>Date</label>
                   <input
                     type="date" value={scheduledDate}
+                    min={todayStr}
                     onChange={(e) => setScheduledDate(e.target.value)}
                     className="form-input"
                   />
@@ -265,19 +274,6 @@ export default function ComposePage() {
                 </div>
               </div>
             )}
-            {/* Best time hint */}
-            <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-              <span style={{ fontSize: "0.78rem", color: "var(--clr-muted)" }}>💡 Meilleure heure détectée :</span>
-              <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "#22D3A0" }}>Vendredi 18:00</span>
-              <button
-                onClick={() => { setScheduledTime("18:00"); }}
-                style={{
-                  padding: "4px 12px", borderRadius: 8, border: "1px solid rgba(34,211,160,0.3)",
-                  background: "rgba(34,211,160,0.06)", color: "#22D3A0",
-                  fontSize: "0.72rem", fontWeight: 700, cursor: "pointer", fontFamily: "var(--font)",
-                }}
-              >Appliquer</button>
-            </div>
           </div>
 
           {error && (
@@ -287,70 +283,27 @@ export default function ComposePage() {
           )}
         </div>
 
-        {/* ── RIGHT: AI sidebar ─────────────────────────── */}
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-
-          {/* AI suggestions */}
-          <div style={{ ...card, padding: 20, borderColor: "rgba(124,92,252,0.2)", background: "linear-gradient(160deg,rgba(124,92,252,0.06),var(--clr-card))" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-              <span style={{ fontSize: "1rem" }}>🤖</span>
-              <span style={{ fontSize: "0.78rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "1px", color: "var(--clr-primary-h)" }}>
-                Suggestions IA
-              </span>
+          <div style={{ ...card, padding: 20 }}>
+            <div style={{ ...sectionLbl, display: "flex", alignItems: "center", gap: 6 }}>
+              ✨ Exemples de posts
             </div>
-
-            {/* Tone indicator */}
-            <div style={{
-              background: "var(--clr-card2)", border: "1px solid rgba(124,92,252,0.2)",
-              borderRadius: 10, padding: 12, marginBottom: 14,
-            }}>
-              <div style={{ fontSize: "0.75rem", color: "var(--clr-muted)", marginBottom: 8 }}>
-                Ton détecté : <strong style={{ color: "var(--clr-primary-h)" }}>Professionnel</strong>
-              </div>
-              <div style={{ height: 4, background: "rgba(255,255,255,0.06)", borderRadius: 2, marginBottom: 4 }}>
-                <div style={{ width: "80%", height: "100%", background: "linear-gradient(90deg,var(--clr-primary),#22D3A0)", borderRadius: 2 }} />
-              </div>
-              <div style={{ fontSize: "0.7rem", color: "var(--clr-muted)" }}>
-                Score d&apos;engagement estimé : <strong style={{ color: "#22D3A0" }}>Élevé</strong>
-              </div>
-            </div>
-
-            {/* Action chips */}
-            {AI_CHIPS.map((chip) => (
-              <button key={chip} style={{
-                display: "block", width: "100%", textAlign: "left",
-                padding: "9px 14px", borderRadius: 10, marginBottom: 8,
-                border: "1px solid var(--clr-border)", background: "var(--clr-card2)",
-                color: "var(--clr-muted)", fontSize: "0.78rem", fontWeight: 600,
-                cursor: "pointer", fontFamily: "var(--font)", transition: "var(--transition)",
-              }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(124,92,252,0.35)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--clr-primary-h)"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--clr-border)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--clr-muted)"; }}
-              >{chip}</button>
-            ))}
-
-            {/* Suggestion cards */}
-            <div style={{ marginTop: 4, fontSize: "0.72rem", color: "var(--clr-muted)", marginBottom: 8, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-              Exemples de posts
-            </div>
-            {AI_SUGGESTIONS.slice(0, 2).map((s, i) => (
+            <p style={{ fontSize: "0.72rem", color: "var(--clr-muted)", marginBottom: 12, lineHeight: 1.5 }}>
+              Cliquez pour insérer un modèle dans l&apos;éditeur.
+            </p>
+            {AI_SUGGESTIONS.map((s, i) => (
               <button key={i} onClick={() => setContent(s)} style={{
                 display: "block", width: "100%", textAlign: "left",
                 padding: "10px 12px", borderRadius: 10, marginBottom: 6,
                 border: "1px solid var(--clr-border)", background: "var(--clr-card2)",
                 color: "var(--clr-muted)", fontSize: "0.72rem", fontWeight: 500,
                 cursor: "pointer", fontFamily: "var(--font)", lineHeight: 1.5,
-                transition: "var(--transition)",
-              }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(124,92,252,0.3)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--clr-text)"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--clr-border)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--clr-muted)"; }}
-              >
-                {s.substring(0, 80)}…
+              }}>
+                {s.length > 90 ? `${s.substring(0, 90)}…` : s}
               </button>
             ))}
           </div>
 
-          {/* Hashtags */}
           <div style={{ ...card, padding: 20 }}>
             <div style={{ ...sectionLbl, display: "flex", alignItems: "center", gap: 6 }}>
               🏷️ Hashtags suggérés
@@ -359,30 +312,15 @@ export default function ComposePage() {
               {HASHTAGS.map((tag) => (
                 <button
                   key={tag}
-                  onClick={() => setContent((prev) => prev + (prev.endsWith(" ") || prev === "" ? "" : " ") + tag)}
+                  onClick={() => insertHashtag(tag)}
                   style={{
                     padding: "5px 12px", borderRadius: 100,
                     background: "rgba(124,92,252,0.1)", border: "1px solid rgba(124,92,252,0.2)",
                     color: "var(--clr-primary-h)", fontSize: "0.75rem", fontWeight: 600,
-                    cursor: "pointer", fontFamily: "var(--font)", transition: "var(--transition)",
+                    cursor: "pointer", fontFamily: "var(--font)",
                   }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(124,92,252,0.2)"; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(124,92,252,0.1)"; }}
                 >{tag}</button>
               ))}
-            </div>
-          </div>
-
-          {/* Optimization badge */}
-          <div style={{
-            padding: 16, borderRadius: 12,
-            background: "rgba(34,211,160,0.06)", border: "1px solid rgba(34,211,160,0.2)",
-          }}>
-            <div style={{ fontSize: "0.82rem", color: "#22D3A0", fontWeight: 700, marginBottom: 4 }}>
-              ✓ Optimisé pour Instagram
-            </div>
-            <div style={{ fontSize: "0.75rem", color: "var(--clr-muted)" }}>
-              Longueur idéale · Hashtags pertinents · Heure optimale
             </div>
           </div>
         </div>

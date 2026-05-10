@@ -5,19 +5,8 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { PLANS } from "@/lib/plans";
 
-const INVOICES = [
-  { id: "#2024-04-01", date: "1 avril 2024",    plan: "Pro — Mensuel",   amount: "29,00 €" },
-  { id: "#2024-03-01", date: "1 mars 2024",     plan: "Pro — Mensuel",   amount: "29,00 €" },
-  { id: "#2024-02-01", date: "1 février 2024",  plan: "Pro — Mensuel",   amount: "29,00 €" },
-  { id: "#2024-01-01", date: "1 janvier 2024",  plan: "Pro — Mensuel",   amount: "29,00 €" },
-  { id: "#2023-12-01", date: "1 décembre 2023", plan: "Free → Pro",      amount: "29,00 €" },
-];
-
-const USAGE = [
-  { label: "Comptes sociaux", value: "8 / 15",        pct: 53,  color: "linear-gradient(90deg,#7C5CFC,#9B82FD)" },
-  { label: "Posts ce mois",   value: "48 / ∞",        pct: 100, color: "linear-gradient(90deg,#22D3A0,#16A87E)" },
-  { label: "Stockage médias", value: "12 Go / 50 Go", pct: 24,  color: "linear-gradient(90deg,#7C5CFC,#22D3A0)" },
-];
+type PlanCode = "FREE" | "PRO" | "AGENCY";
+type StatusCode = "ACTIVE" | "CANCELED" | "PAST_DUE" | "TRIALING" | "INCOMPLETE";
 
 interface Props {
   priceIds: {
@@ -26,12 +15,71 @@ interface Props {
     agencyMonthly: string;
     agencyYearly: string;
   };
+  subscription: {
+    plan: PlanCode;
+    status: StatusCode;
+    currentPeriodEnd: string;
+    cancelAtPeriodEnd: boolean;
+    trialEnd: string | null;
+  } | null;
+  hasStripeCustomer: boolean;
+  usage: { socialCount: number; postsThisMonth: number };
 }
 
-export default function BillingClient({ priceIds }: Props) {
+const PLAN_LABEL: Record<PlanCode, string> = {
+  FREE: "Gratuit",
+  PRO: "Pro",
+  AGENCY: "Agence",
+};
+
+const STATUS_LABEL: Record<StatusCode, { label: string; color: string }> = {
+  ACTIVE:     { label: "Actif",       color: "#22D3A0" },
+  TRIALING:   { label: "Essai",       color: "#9B82FD" },
+  PAST_DUE:   { label: "En retard",   color: "#FC5C7C" },
+  CANCELED:   { label: "Annulé",      color: "#9B99B5" },
+  INCOMPLETE: { label: "Incomplet",   color: "#FFB800" },
+};
+
+const PRICE_FOR_PLAN: Record<PlanCode, number> = { FREE: 0, PRO: 29, AGENCY: 79 };
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString("fr-FR", {
+    day: "numeric", month: "long", year: "numeric",
+  });
+}
+
+export default function BillingClient({ priceIds, subscription, hasStripeCustomer, usage }: Props) {
   const [loading, setLoading]     = useState<string | null>(null);
   const [showPlans, setShowPlans] = useState(false);
   const [billing, setBilling]     = useState<"monthly" | "yearly">("monthly");
+
+  const currentPlan: PlanCode = subscription?.plan ?? "FREE";
+  const currentStatus: StatusCode = subscription?.status ?? "ACTIVE";
+  const currentPrice = PRICE_FOR_PLAN[currentPlan];
+
+  const limits = {
+    socialMax: currentPlan === "FREE" ? 3 : currentPlan === "PRO" ? 15 : Infinity,
+    postsMax:  currentPlan === "FREE" ? 10 : Infinity,
+  };
+
+  const usageBars: { label: string; value: string; pct: number; color: string }[] = [
+    {
+      label: "Comptes sociaux",
+      value: limits.socialMax === Infinity
+        ? `${usage.socialCount}`
+        : `${usage.socialCount} / ${limits.socialMax}`,
+      pct: limits.socialMax === Infinity ? 0 : Math.min(100, Math.round((usage.socialCount / limits.socialMax) * 100)),
+      color: "linear-gradient(90deg,#7C5CFC,#9B82FD)",
+    },
+    {
+      label: "Posts publiés (30j)",
+      value: limits.postsMax === Infinity
+        ? `${usage.postsThisMonth}`
+        : `${usage.postsThisMonth} / ${limits.postsMax}`,
+      pct: limits.postsMax === Infinity ? 0 : Math.min(100, Math.round((usage.postsThisMonth / limits.postsMax) * 100)),
+      color: "linear-gradient(90deg,#22D3A0,#16A87E)",
+    },
+  ];
 
   const getPriceId = (planId: "pro" | "agency") => {
     if (planId === "pro")     return billing === "monthly" ? priceIds.proMonthly     : priceIds.proYearly;
@@ -40,7 +88,7 @@ export default function BillingClient({ priceIds }: Props) {
 
   const handleUpgrade = async (planId: "pro" | "agency") => {
     const priceId = getPriceId(planId);
-    if (!priceId) { toast.error("Plan non disponible."); return; }
+    if (!priceId) { toast.error("Plan non disponible — configure les price IDs."); return; }
     setLoading(planId);
     try {
       const res = await fetch("/api/billing/checkout", {
@@ -48,7 +96,11 @@ export default function BillingClient({ priceIds }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ priceId }),
       });
-      if (!res.ok) { const d = await res.json(); toast.error(d.error ?? "Erreur paiement"); return; }
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        toast.error(d.error ?? "Erreur paiement");
+        return;
+      }
       const { url } = await res.json();
       if (url) window.location.href = url;
     } catch {
@@ -73,45 +125,54 @@ export default function BillingClient({ priceIds }: Props) {
   };
 
   const plans = [PLANS.free, PLANS.pro, PLANS.agency];
+  const renewalLabel = subscription
+    ? subscription.cancelAtPeriodEnd
+      ? `Annulation prévue le ${formatDate(subscription.currentPeriodEnd)}`
+      : `Renouvellement le ${formatDate(subscription.currentPeriodEnd)}`
+    : "Aucun abonnement actif";
 
   return (
     <div style={{ padding: 32, maxWidth: 960, marginLeft: "auto", marginRight: "auto" }}>
-
-      {/* ── Header ────────────────────────────────────────── */}
       <div style={{ marginBottom: 32 }}>
         <h1 style={{ fontSize: "1.6rem", fontWeight: 800, letterSpacing: "-0.5px" }}>Facturation</h1>
         <p style={{ color: "var(--clr-muted)", fontSize: "0.875rem", marginTop: 4 }}>
-          Gérez votre abonnement et consultez vos factures
+          Gérez votre abonnement et votre méthode de paiement
         </p>
       </div>
 
-      {/* ── Current plan ──────────────────────────────────── */}
       <div style={{
         background: "var(--clr-card)", borderRadius: 16, marginBottom: 24, overflow: "hidden",
         border: "1px solid var(--clr-border)",
-        borderTop: "3px solid transparent",
-        borderImage: "linear-gradient(90deg,#7C5CFC,#9B82FD) 1",
       }}>
         <div style={{ padding: "28px 28px 0" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 20, marginBottom: 24 }}>
             <div>
               <div style={{
-                display: "inline-flex", alignItems: "center", gap: 6,
+                display: "inline-flex", alignItems: "center", gap: 8,
                 padding: "4px 10px", borderRadius: 100, marginBottom: 10,
                 background: "rgba(124,92,252,0.15)", border: "1px solid rgba(124,92,252,0.3)",
                 fontSize: "0.72rem", fontWeight: 700, color: "var(--clr-primary-h)",
                 letterSpacing: "0.5px", textTransform: "uppercase",
               }}>
                 ✦ Plan actuel
+                <span style={{
+                  width: 6, height: 6, borderRadius: "50%",
+                  background: STATUS_LABEL[currentStatus].color,
+                }} />
+                <span style={{ color: STATUS_LABEL[currentStatus].color }}>{STATUS_LABEL[currentStatus].label}</span>
               </div>
-              <h2 style={{ fontSize: "1.6rem", fontWeight: 800, letterSpacing: "-0.5px" }}>Pro</h2>
+              <h2 style={{ fontSize: "1.6rem", fontWeight: 800, letterSpacing: "-0.5px" }}>{PLAN_LABEL[currentPlan]}</h2>
               <p style={{ fontSize: "0.82rem", color: "var(--clr-muted)", marginTop: 4 }}>
-                Votre abonnement se renouvelle le <strong style={{ color: "var(--clr-text)" }}>1er mai 2024</strong>
+                {renewalLabel}
               </p>
             </div>
             <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: "2.2rem", fontWeight: 800, letterSpacing: "-1px", lineHeight: 1 }}>29€</div>
-              <div style={{ fontSize: "0.82rem", color: "var(--clr-muted)", marginTop: 4 }}>par mois</div>
+              <div style={{ fontSize: "2.2rem", fontWeight: 800, letterSpacing: "-1px", lineHeight: 1 }}>
+                {currentPrice}€
+              </div>
+              <div style={{ fontSize: "0.82rem", color: "var(--clr-muted)", marginTop: 4 }}>
+                {currentPlan === "FREE" ? "Sans engagement" : "par mois"}
+              </div>
               <button
                 onClick={() => setShowPlans(!showPlans)}
                 style={{
@@ -121,15 +182,14 @@ export default function BillingClient({ priceIds }: Props) {
                   cursor: "pointer", fontFamily: "var(--font)",
                 }}
               >
-                {showPlans ? "Masquer les plans" : "Changer de plan"}
+                {showPlans ? "Masquer les plans" : currentPlan === "FREE" ? "Passer à un plan payant" : "Changer de plan"}
               </button>
             </div>
           </div>
         </div>
 
-        {/* Usage bars */}
         <div style={{ padding: "0 28px 28px" }}>
-          {USAGE.map((u) => (
+          {usageBars.map((u) => (
             <div key={u.label} style={{ marginBottom: 16 }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
                 <span style={{ fontSize: "0.8rem", color: "var(--clr-muted)" }}>{u.label}</span>
@@ -143,7 +203,6 @@ export default function BillingClient({ priceIds }: Props) {
         </div>
       </div>
 
-      {/* ── Plan upgrade cards (collapsible) ──────────────── */}
       {showPlans && (
         <div style={{ marginBottom: 24 }}>
           <div style={{ display: "flex", justifyContent: "center", gap: 4, marginBottom: 20 }}>
@@ -154,7 +213,7 @@ export default function BillingClient({ priceIds }: Props) {
                   fontSize: "0.82rem", fontWeight: 600, cursor: "pointer",
                   background: billing === mode ? "#7C5CFC" : "var(--clr-card2)",
                   color: billing === mode ? "#fff" : "var(--clr-muted)",
-                  fontFamily: "var(--font)", transition: "var(--transition)",
+                  fontFamily: "var(--font)",
                   display: "flex", alignItems: "center", gap: 8,
                 }}
               >
@@ -170,6 +229,7 @@ export default function BillingClient({ priceIds }: Props) {
             {plans.map((plan) => {
               const price = billing === "monthly" ? plan.monthlyPrice : plan.yearlyPrice;
               const isUpgradeable = plan.id === "pro" || plan.id === "agency";
+              const isCurrent = plan.id.toUpperCase() === currentPlan;
               return (
                 <div key={plan.id} style={{
                   position: "relative", borderRadius: 16, padding: 24,
@@ -199,9 +259,9 @@ export default function BillingClient({ priceIds }: Props) {
                       </li>
                     ))}
                   </ul>
-                  {!isUpgradeable ? (
+                  {isCurrent || !isUpgradeable ? (
                     <button disabled style={{ width: "100%", padding: "10px 0", borderRadius: 12, border: "1px solid var(--clr-border)", background: "transparent", color: "var(--clr-muted)", fontSize: "0.82rem", fontWeight: 600, cursor: "default" }}>
-                      Plan actuel
+                      {isCurrent ? "Plan actuel" : "Plan gratuit"}
                     </button>
                   ) : (
                     <button
@@ -212,7 +272,7 @@ export default function BillingClient({ priceIds }: Props) {
                         background: plan.color, color: "#fff", fontSize: "0.875rem", fontWeight: 700,
                         cursor: loading === plan.id ? "not-allowed" : "pointer",
                         opacity: loading === plan.id ? 0.6 : 1, fontFamily: "var(--font)",
-                        boxShadow: `0 0 20px ${plan.color}40`, transition: "var(--transition)",
+                        boxShadow: `0 0 20px ${plan.color}40`,
                       }}
                     >
                       {loading === plan.id ? "Chargement…" : `Passer à ${plan.name} →`}
@@ -225,94 +285,44 @@ export default function BillingClient({ priceIds }: Props) {
         </div>
       )}
 
-      {/* ── Payment method ────────────────────────────────── */}
+      {hasStripeCustomer && (
+        <div style={{
+          background: "var(--clr-card)", border: "1px solid var(--clr-border)",
+          borderRadius: 16, padding: "20px 24px", marginBottom: 24,
+          display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16,
+        }}>
+          <div>
+            <h3 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: 6 }}>Gestion de la facturation</h3>
+            <p style={{ fontSize: "0.82rem", color: "var(--clr-muted)" }}>
+              Modifier le moyen de paiement, télécharger les factures, annuler l&apos;abonnement.
+            </p>
+          </div>
+          <button
+            onClick={handlePortal}
+            disabled={loading === "portal"}
+            style={{
+              padding: "9px 20px", borderRadius: 12,
+              border: "1px solid rgba(124,92,252,0.35)",
+              background: "transparent", color: "var(--clr-primary-h)",
+              fontSize: "0.82rem", fontWeight: 700, cursor: "pointer",
+              fontFamily: "var(--font)",
+              opacity: loading === "portal" ? 0.6 : 1,
+            }}
+          >
+            {loading === "portal" ? "Chargement…" : "Ouvrir le portail Stripe →"}
+          </button>
+        </div>
+      )}
+
       <div style={{
         background: "var(--clr-card)", border: "1px solid var(--clr-border)",
-        borderRadius: 16, padding: "20px 24px", marginBottom: 24,
-        display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16,
-      }}>
-        <div>
-          <h3 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: 8 }}>Moyen de paiement</h3>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: "0.875rem", color: "var(--clr-muted)" }}>
-            <span style={{ background: "rgba(255,255,255,0.08)", padding: "3px 10px", borderRadius: 6, fontWeight: 800, fontSize: "0.78rem" }}>VISA</span>
-            <span>•••• •••• •••• 4242</span>
-            <span>Exp. 12/26</span>
-          </div>
-        </div>
-        <button
-          onClick={handlePortal}
-          disabled={loading === "portal"}
-          style={{
-            padding: "9px 20px", borderRadius: 12,
-            border: "1px solid rgba(124,92,252,0.35)",
-            background: "transparent", color: "var(--clr-primary-h)",
-            fontSize: "0.82rem", fontWeight: 700, cursor: "pointer",
-            fontFamily: "var(--font)", transition: "var(--transition)",
-            opacity: loading === "portal" ? 0.6 : 1,
-          }}
-        >
-          {loading === "portal" ? "Chargement…" : "Portail Stripe →"}
-        </button>
-      </div>
-
-      {/* ── Invoice history ───────────────────────────────── */}
-      <div style={{ background: "var(--clr-card)", border: "1px solid var(--clr-border)", borderRadius: 16, overflow: "hidden" }}>
-        <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--clr-border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <h3 style={{ fontSize: "0.95rem", fontWeight: 700 }}>Historique des factures</h3>
-          <button
-            onClick={() => toast.info("Export PDF bientôt disponible")}
-            style={{
-              padding: "7px 14px", borderRadius: 10, border: "1px solid var(--clr-border)",
-              background: "var(--clr-card2)", color: "var(--clr-muted)",
-              fontSize: "0.78rem", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font)",
-            }}>📥 Tout télécharger</button>
-        </div>
-        <table className="invoices-table" aria-label="Historique des factures" style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr style={{ borderBottom: "1px solid var(--clr-border)" }}>
-              {["Facture", "Date", "Plan", "Montant", "Statut", "Action"].map((h) => (
-                <th key={h} scope="col" style={{ padding: "12px 24px", textAlign: "left", fontSize: "0.75rem", fontWeight: 700, color: "var(--clr-muted)", textTransform: "uppercase", letterSpacing: "0.5px" }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {INVOICES.map((inv, i) => (
-              <tr key={inv.id} style={{ borderBottom: i < INVOICES.length - 1 ? "1px solid var(--clr-border)" : "none" }}>
-                <td style={{ padding: "14px 24px", fontSize: "0.875rem", fontWeight: 600 }}>{inv.id}</td>
-                <td style={{ padding: "14px 24px", fontSize: "0.875rem", color: "var(--clr-muted)" }}>{inv.date}</td>
-                <td style={{ padding: "14px 24px", fontSize: "0.875rem" }}>{inv.plan}</td>
-                <td style={{ padding: "14px 24px", fontSize: "0.875rem", fontWeight: 700 }}>{inv.amount}</td>
-                <td style={{ padding: "14px 24px" }}>
-                  <span style={{
-                    display: "inline-flex", alignItems: "center", gap: 4,
-                    padding: "3px 10px", borderRadius: 100,
-                    background: "rgba(34,211,160,0.12)", color: "#22D3A0",
-                    fontSize: "0.72rem", fontWeight: 700,
-                  }}>✓ Payé</span>
-                </td>
-                <td style={{ padding: "14px 24px" }}>
-                  <button
-                    onClick={() => toast.info("Téléchargement PDF bientôt disponible")}
-                    style={{ background: "none", border: "none", fontSize: "0.82rem", color: "var(--clr-primary-h)", fontWeight: 600, cursor: "pointer", padding: 0, fontFamily: "var(--font)" }}
-                  >↓ PDF</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* ── Guarantee ─────────────────────────────────────── */}
-      <div style={{
-        marginTop: 20, background: "var(--clr-card)", border: "1px solid var(--clr-border)",
         borderRadius: 12, padding: "14px 20px", textAlign: "center",
       }}>
         <p style={{ fontSize: "0.78rem", color: "var(--clr-muted)" }}>
-          ✓ 14 jours d&apos;essai gratuit sur tous les plans payants &nbsp;·&nbsp;
-          ✓ Sans carte bancaire &nbsp;·&nbsp;
-          ✓ Annulation à tout moment &nbsp;·&nbsp;
+          ✓ 14 jours d&apos;essai gratuit sur les plans payants &nbsp;·&nbsp;
+          ✓ Annulation à tout moment depuis le portail Stripe &nbsp;·&nbsp;
           <Link href="/pricing" style={{ color: "var(--clr-primary-h)", fontWeight: 600 }}>
-            Voir tous les plans
+            Voir les plans
           </Link>
         </p>
       </div>

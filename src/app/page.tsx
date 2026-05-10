@@ -4,12 +4,14 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 import Logo from "@/components/Logo";
-import { motion, useInView, useScroll, useSpring, useTransform } from "framer-motion";
+import { motion, useScroll, useSpring, useTransform } from "framer-motion";
 import MagneticLink from "@/components/cinematic/MagneticLink";
 import TiltCard from "@/components/cinematic/TiltCard";
 import LiveDashboard from "@/components/cinematic/LiveDashboard";
 import Marquee from "@/components/cinematic/Marquee";
 import BootSplash from "@/components/cinematic/BootSplash";
+import LenisProvider from "@/components/cinematic/LenisProvider";
+import CustomCursor from "@/components/cinematic/CustomCursor";
 
 const CityScene = dynamic(() => import("@/components/cinematic/CityScene"), {
   ssr: false,
@@ -31,7 +33,9 @@ export default function HomePage() {
   useScrollReveal();
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden" style={{ color: "var(--clr-text)" }}>
+    <LenisProvider>
+      <CustomCursor />
+      <div className="relative min-h-screen overflow-x-hidden" style={{ color: "var(--clr-text)" }}>
       <BootSplash />
 
       {/* Cinematic 3D city behind everything */}
@@ -59,7 +63,8 @@ export default function HomePage() {
         <CTASection />
         <FooterSection />
       </div>
-    </div>
+      </div>
+    </LenisProvider>
   );
 }
 
@@ -671,5 +676,3 @@ function SectionSub({ children }: { children: React.ReactNode }) {
   );
 }
 
-// dummy use of useInView to avoid unused import warning during refactor
-export const _unusedHook = useInView;

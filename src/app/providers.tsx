@@ -2,14 +2,11 @@
 
 import { SessionProvider } from "next-auth/react";
 import { Toaster } from "sonner";
-import LenisProvider from "@/components/cinematic/LenisProvider";
-import CustomCursor from "@/components/cinematic/CustomCursor";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider>
-      <CustomCursor />
-      <LenisProvider>{children}</LenisProvider>
+      {children}
       <Toaster
         position="bottom-right"
         theme="dark"

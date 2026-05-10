@@ -42,16 +42,24 @@ export async function PATCH(
   const body = await req.json()
   const { content, platforms, scheduledAt, mediaUrls, status } = body
 
+  // Le client peut seulement passer un post de PUBLISHED → DRAFT (annuler la publication)
+  // ou rester sur DRAFT/SCHEDULED. Toute transition vers PUBLISHED/FAILED est réservée
+  // au pipeline serveur (publishPost).
+  let nextStatus: "DRAFT" | "SCHEDULED" | undefined
+  if (status === "DRAFT" || status === "SCHEDULED") {
+    nextStatus = status
+  }
+
   const updated = await prisma.post.update({
     where: { id },
     data: {
-      ...(content !== undefined ? { content } : {}),
-      ...(platforms !== undefined ? { platforms } : {}),
+      ...(typeof content === "string" ? { content } : {}),
+      ...(Array.isArray(platforms) ? { platforms } : {}),
       ...(scheduledAt !== undefined
         ? { scheduledAt: scheduledAt ? new Date(scheduledAt) : null }
         : {}),
-      ...(mediaUrls !== undefined ? { mediaUrls } : {}),
-      ...(status !== undefined ? { status } : {}),
+      ...(Array.isArray(mediaUrls) ? { mediaUrls } : {}),
+      ...(nextStatus ? { status: nextStatus } : {}),
     },
   })
 

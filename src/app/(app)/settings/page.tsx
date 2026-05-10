@@ -154,9 +154,9 @@ export default function SettingsPage() {
       {activeTab === "Profil" && (
         <>
           <div style={cardStyle}>
-            <h3 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: 6 }}>Photo de profil</h3>
+            <h3 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: 6 }}>Avatar</h3>
             <p style={{ fontSize: "0.82rem", color: "var(--clr-muted)", marginBottom: 20 }}>
-              Votre photo apparaîtra sur votre profil et vos rapports en marque blanche.
+              Votre avatar est généré à partir de l&apos;initiale de votre nom. L&apos;upload personnalisé arrive bientôt.
             </p>
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
               <div style={{
@@ -166,10 +166,6 @@ export default function SettingsPage() {
                 fontSize: "1.3rem", fontWeight: 800, color: "#fff",
               }}>
                 {session?.user?.name?.charAt(0)?.toUpperCase() ?? "U"}
-              </div>
-              <div style={{ display: "flex", gap: 10 }}>
-                <button style={{ padding: "7px 16px", borderRadius: 10, border: "1px solid var(--clr-border)", background: "var(--clr-card2)", color: "var(--clr-text)", fontSize: "0.82rem", fontWeight: 600, cursor: "pointer", fontFamily: "var(--font)" }}>Changer</button>
-                <button style={btnDanger}>Supprimer</button>
               </div>
             </div>
           </div>
@@ -184,11 +180,6 @@ export default function SettingsPage() {
             <div style={{ marginBottom: 16 }}>
               <label style={lbl}>Email</label>
               <input className="form-input" type="email" defaultValue={session?.user?.email ?? ""} autoComplete="email" disabled style={{ opacity: 0.6, cursor: "not-allowed" }} />
-            </div>
-            <div style={{ marginBottom: 20 }}>
-              <label style={lbl}>Bio</label>
-              <textarea className="form-input" rows={3} style={{ resize: "vertical" }}
-                defaultValue="Spécialiste Marketing Digital · Passionné par la croissance des marques sur les réseaux sociaux 🚀" />
             </div>
             <button onClick={handleSaveProfile} disabled={savingProfile} style={{ ...btnPrimary, opacity: savingProfile ? 0.6 : 1, cursor: savingProfile ? "not-allowed" : "pointer" }}>
               {savingProfile ? "Enregistrement…" : "Enregistrer les modifications"}
@@ -223,11 +214,14 @@ export default function SettingsPage() {
           </div>
 
           <div style={{ ...cardStyle, borderColor: "rgba(252,92,124,0.25)" }}>
-            <h3 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: 6, color: "var(--clr-danger)" }}>Zone de danger</h3>
-            <p style={{ fontSize: "0.82rem", color: "var(--clr-muted)", marginBottom: 20 }}>Ces actions sont irréversibles. Procédez avec prudence.</p>
+            <h3 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: 6, color: "var(--clr-danger)" }}>Déconnexion</h3>
+            <p style={{ fontSize: "0.82rem", color: "var(--clr-muted)", marginBottom: 20 }}>
+              Pour supprimer définitivement votre compte et vos données, contactez{" "}
+              <a href="mailto:contact@postly.app" style={{ color: "var(--clr-primary-h)", fontWeight: 600 }}>contact@postly.app</a>{" "}
+              (RGPD — délai 30 jours).
+            </p>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <button style={btnDanger}>Désactiver le compte</button>
-              <button onClick={() => signOut({ callbackUrl: "/" })} style={btnDanger}>Supprimer le compte</button>
+              <button onClick={() => signOut({ callbackUrl: "/" })} style={btnDanger}>Se déconnecter</button>
             </div>
           </div>
         </>
