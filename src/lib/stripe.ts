@@ -1,6 +1,23 @@
+<<<<<<< HEAD
 import Stripe from "stripe"
 import { prisma } from "./prisma"
 import type { Plan } from "@prisma/client"
+=======
+import Stripe from "stripe";
+import { prisma } from "./prisma";
+import type { SubscriptionStatus } from "@prisma/client"
+
+export const STRIPE_STATUS_MAP: Record<Stripe.Subscription.Status, SubscriptionStatus> = {
+  active: "ACTIVE",
+  trialing: "TRIALING",
+  past_due: "PAST_DUE",
+  canceled: "CANCELED",
+  unpaid: "UNPAID",
+  incomplete: "INCOMPLETE",
+  incomplete_expired: "INCOMPLETE_EXPIRED",
+  paused: "PAUSED",
+}
+>>>>>>> 28e1ef3 (corrections)
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "")
 
