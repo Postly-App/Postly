@@ -371,20 +371,7 @@ function HowItWorks() {
 
         <div style={{ position: "relative", marginTop: 70 }}>
           {/* Vertical progress line on desktop */}
-          <div aria-hidden="true" className="how-line" style={{
-            position: "absolute", left: "50%", top: 30, bottom: 30, width: 2,
-            transform: "translateX(-50%)",
-            background: "rgba(255,255,255,0.06)",
-            borderRadius: 1,
-          }}>
-            <motion.div style={{
-              position: "absolute", left: 0, right: 0, top: 0,
-              height: lineH,
-              background: "linear-gradient(180deg, #7C5CFC, #22D3A0)",
-              borderRadius: 1,
-              boxShadow: "0 0 14px rgba(124,92,252,0.7)",
-            }} />
-          </div>
+
 
           <motion.div
             initial="hidden"
