@@ -124,7 +124,7 @@ export default function BillingClient({ priceIds, subscription, hasStripeCustome
     }
   };
 
-  const plans = [PLANS.free, PLANS.pro, PLANS.agency];
+  const plans = [PLANS.pro, PLANS.agency];
   const renewalLabel = subscription
     ? subscription.cancelAtPeriodEnd
       ? `Annulation prévue le ${formatDate(subscription.currentPeriodEnd)}`
