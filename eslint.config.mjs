@@ -17,6 +17,7 @@ const eslintConfig = defineConfig([
       "react-hooks/set-state-in-effect": "off",
       "react-hooks/rules-of-hooks": "warn",
       "@typescript-eslint/no-unused-vars": "warn",
+      "no-console": "warn",
     },
   },
 ]);
