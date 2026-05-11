@@ -27,6 +27,7 @@ model User {
   socialAccounts SocialAccount[]
   subscription   Subscription?
   analytics      Analytics[]
+  passwordResetToken PasswordResetToken?
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -132,6 +133,9 @@ enum SubscriptionStatus {
   PAST_DUE
   TRIALING
   INCOMPLETE
+  INCOMPLETE_EXPIRED
+  UNPAID
+  PAUSED
 }
 
 model Subscription {
@@ -171,4 +175,17 @@ model Analytics {
   post Post? @relation(fields: [postId], references: [id], onDelete: SetNull)
 
   @@index([userId, recordedAt])
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// PASSWORD RESET
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  token     String   @unique
+  expires   DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
