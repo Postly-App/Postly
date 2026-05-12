@@ -2,6 +2,10 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import {
+  normalizePlatformId,
+  platformStorageKeys,
+} from "@/lib/platforms"
 
 const SUPPORTED_PLATFORMS = [
   "instagram",
@@ -49,11 +53,19 @@ export async function POST(
   }
 
   const { provider } = await params
-  const platform = provider.toLowerCase()
+  const slug = provider.toLowerCase()
 
-  if (!SUPPORTED_PLATFORMS.includes(platform)) {
+  if (!SUPPORTED_PLATFORMS.includes(slug)) {
     return NextResponse.json(
-      { error: `Plateforme "${platform}" non supportée.` },
+      { error: `Plateforme "${slug}" non supportée.` },
+      { status: 400 }
+    )
+  }
+
+  const canonical = normalizePlatformId(slug)
+  if (!canonical) {
+    return NextResponse.json(
+      { error: `Plateforme "${slug}" non supportée.` },
       { status: 400 }
     )
   }
@@ -68,30 +80,38 @@ export async function POST(
     )
   }
 
-  const account = await prisma.socialAccount.upsert({
+  const keys = platformStorageKeys(canonical)
+  const existing = await prisma.socialAccount.findFirst({
     where: {
-      userId_platform_accountId: {
-        userId: session.user.id,
-        platform,
-        accountId,
-      },
-    },
-    update: {
-      accessToken,
-      refreshToken,
-      expiresAt: expiresAt ? new Date(expiresAt) : null,
-      accountName,
-    },
-    create: {
       userId: session.user.id,
-      platform,
       accountId,
-      accountName,
-      accessToken,
-      refreshToken,
-      expiresAt: expiresAt ? new Date(expiresAt) : null,
+      platform: { in: keys },
     },
   })
+
+  const tokenData = {
+    accessToken,
+    refreshToken,
+    expiresAt: expiresAt ? new Date(expiresAt) : null,
+    accountName,
+  }
+
+  const account = existing
+    ? await prisma.socialAccount.update({
+        where: { id: existing.id },
+        data: { ...tokenData, platform: canonical },
+      })
+    : await prisma.socialAccount.create({
+        data: {
+          userId: session.user.id,
+          platform: canonical,
+          accountId,
+          accountName,
+          accessToken,
+          refreshToken,
+          expiresAt: expiresAt ? new Date(expiresAt) : null,
+        },
+      })
 
   return NextResponse.json(account)
 }
@@ -107,12 +127,21 @@ export async function DELETE(
   }
 
   const { provider } = await params
+  const slug = provider.toLowerCase()
+  const canonical = normalizePlatformId(slug)
+  if (!canonical) {
+    return NextResponse.json(
+      { error: `Plateforme "${slug}" non supportée.` },
+      { status: 400 }
+    )
+  }
+
   const { accountId } = await req.json()
 
   await prisma.socialAccount.deleteMany({
     where: {
       userId: session.user.id,
-      platform: provider.toLowerCase(),
+      platform: { in: platformStorageKeys(canonical) },
       ...(accountId ? { accountId } : {}),
     },
   })

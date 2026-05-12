@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { getPostById, deletePost } from "@/lib/db/posts"
 import { prisma } from "@/lib/prisma"
+import { normalizePlatformId, normalizePlatformIds } from "@/lib/platforms"
 
 // GET /api/posts/[id]
 export async function GET(
@@ -42,6 +43,32 @@ export async function PATCH(
   const body = await req.json()
   const { content, platforms, scheduledAt, mediaUrls, status } = body
 
+  let platformsNormalized: string[] | undefined
+  if (Array.isArray(platforms)) {
+    if (!platforms.every((p: unknown) => typeof p === "string")) {
+      return NextResponse.json(
+        { error: "platforms doit être un tableau de chaînes." },
+        { status: 400 }
+      )
+    }
+    for (const p of platforms) {
+      if (!normalizePlatformId(p)) {
+        return NextResponse.json(
+          { error: `Plateforme non supportée : ${p}` },
+          { status: 400 }
+        )
+      }
+    }
+    const np = normalizePlatformIds(platforms)
+    if (np.length === 0) {
+      return NextResponse.json(
+        { error: "Au moins une plateforme valide est requise." },
+        { status: 400 }
+      )
+    }
+    platformsNormalized = np
+  }
+
   // Le client peut seulement passer un post de PUBLISHED → DRAFT (annuler la publication)
   // ou rester sur DRAFT/SCHEDULED. Toute transition vers PUBLISHED/FAILED est réservée
   // au pipeline serveur (publishPost).
@@ -54,7 +81,7 @@ export async function PATCH(
     where: { id },
     data: {
       ...(typeof content === "string" ? { content } : {}),
-      ...(Array.isArray(platforms) ? { platforms } : {}),
+      ...(platformsNormalized !== undefined ? { platforms: platformsNormalized } : {}),
       ...(scheduledAt !== undefined
         ? { scheduledAt: scheduledAt ? new Date(scheduledAt) : null }
         : {}),

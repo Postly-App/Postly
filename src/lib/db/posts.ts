@@ -65,14 +65,19 @@ export async function createPost(
 export async function updatePostStatus(
   postId: string,
   status: PostStatus,
-  error?: string
+  error?: string | null
 ) {
   return prisma.post.update({
     where: { id: postId },
     data: {
       status,
-      ...(status === "PUBLISHED" ? { publishedAt: new Date() } : {}),
-      ...(error ? { error } : {}),
+      ...(status === "PUBLISHED"
+        ? { publishedAt: new Date(), error: null }
+        : status === "FAILED"
+          ? { error: error ?? "Publication échouée." }
+          : error != null && error !== ""
+            ? { error }
+            : {}),
     },
   })
 }

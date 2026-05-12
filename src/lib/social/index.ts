@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { updatePostStatus } from "@/lib/db/posts"
+import { normalizePlatformId, type PlatformId } from "@/lib/platforms"
 
 interface PublishResult {
   platform: string
@@ -17,14 +18,28 @@ export async function publishPost(
 
   if (!post) throw new Error("Post not found")
 
+  if (post.platforms.length === 0) {
+    await updatePostStatus(postId, "FAILED", "Aucune plateforme ciblée.")
+    return []
+  }
+
   const socialAccounts = await prisma.socialAccount.findMany({
-    where: { userId, platform: { in: post.platforms } },
+    where: { userId },
   })
+
+  const accountsByCanon = new Map<PlatformId, (typeof socialAccounts)[number]>()
+  for (const a of socialAccounts) {
+    const canon = normalizePlatformId(a.platform)
+    if (canon && !accountsByCanon.has(canon)) {
+      accountsByCanon.set(canon, a)
+    }
+  }
 
   const results: PublishResult[] = []
 
   for (const platform of post.platforms) {
-    const account = socialAccounts.find((a) => a.platform === platform)
+    const canon = normalizePlatformId(platform)
+    const account = canon ? accountsByCanon.get(canon) : undefined
 
     if (!account) {
       results.push({
@@ -36,7 +51,6 @@ export async function publishPost(
     }
 
     // Publication sur les réseaux sociaux pas encore implémentée.
-    // Le post est sauvegardé en brouillon jusqu'à l'intégration des APIs.
     results.push({
       platform,
       success: false,
@@ -44,7 +58,20 @@ export async function publishPost(
     })
   }
 
-  await updatePostStatus(postId, "DRAFT", undefined)
+  const allOk = results.every((r) => r.success)
+  if (allOk) {
+    await updatePostStatus(postId, "PUBLISHED")
+  } else {
+    const detail = results
+      .filter((r) => !r.success)
+      .map((r) => `${r.platform}: ${r.error ?? "échec"}`)
+      .join(" · ")
+    await updatePostStatus(
+      postId,
+      "FAILED",
+      detail.slice(0, 4000) || "Publication échouée."
+    )
+  }
 
   return results
 }

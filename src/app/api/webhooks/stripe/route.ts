@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
-import Stripe from "stripe";
 import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
+import {
+  stripe,
+  stripeSubscriptionToPrismaFields,
+  invoiceSubscriptionId,
+  mapStripeSubscriptionStatus,
+} from "@/lib/stripe";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2024-11-20.acacia" });
 
 export async function POST(req: Request) {
   const sig = (await headers()).get("stripe-signature");
@@ -14,9 +17,13 @@ export async function POST(req: Request) {
 
   const rawBody = await req.text();
 
-  let event: Stripe.Event;
+  let event: import("stripe").Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET!);
+    event = stripe.webhooks.constructEvent(
+      rawBody,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET!
+    );
   } catch (err) {
     console.error("Stripe signature verification failed:", err);
     return new NextResponse("Invalid signature", { status: 400 });
@@ -25,53 +32,77 @@ export async function POST(req: Request) {
   try {
     switch (event.type) {
       case "checkout.session.completed": {
-        const s = event.data.object as Stripe.Checkout.Session;
+        const s = event.data.object as import("stripe").Stripe.Checkout.Session;
         const userId = s.metadata?.userId;
-        const customerId = typeof s.customer === "string" ? s.customer : s.customer?.id;
-        const subscriptionId = typeof s.subscription === "string" ? s.subscription : s.subscription?.id;
-        if (userId && subscriptionId) {
+        const customerId =
+          typeof s.customer === "string" ? s.customer : s.customer?.id;
+        const subscriptionId =
+          typeof s.subscription === "string"
+            ? s.subscription
+            : s.subscription?.id;
+
+        if (userId && subscriptionId && customerId) {
           const sub = await stripe.subscriptions.retrieve(subscriptionId);
+          const fields = stripeSubscriptionToPrismaFields(sub);
+
           await prisma.subscription.upsert({
             where: { userId },
             update: {
-              stripeCustomerId: customerId!,
-              stripeSubscriptionId: sub.id,
-              stripePriceId: sub.items.data[0].price.id,
-              stripeCurrentPeriodEnd: new Date(sub.current_period_end * 1000),
-              status: sub.status,
+              ...fields,
+              stripeCustomerId: customerId,
             },
             create: {
               userId,
-              stripeCustomerId: customerId!,
-              stripeSubscriptionId: sub.id,
-              stripePriceId: sub.items.data[0].price.id,
-              stripeCurrentPeriodEnd: new Date(sub.current_period_end * 1000),
-              status: sub.status,
+              ...fields,
+              stripeCustomerId: customerId,
             },
           });
         }
         break;
       }
-      case "customer.subscription.updated":
-      case "customer.subscription.deleted": {
-        const sub = event.data.object as Stripe.Subscription;
+
+      case "customer.subscription.updated": {
+        const sub = event.data.object as import("stripe").Stripe.Subscription;
+        const fields = stripeSubscriptionToPrismaFields(sub);
+
         await prisma.subscription.updateMany({
           where: { stripeSubscriptionId: sub.id },
-          data: {
-            stripePriceId: sub.items.data[0].price.id,
-            stripeCurrentPeriodEnd: new Date(sub.current_period_end * 1000),
-            status: sub.status,
-          },
+          data: fields,
         });
         break;
       }
+
+      case "customer.subscription.deleted": {
+        const sub = event.data.object as import("stripe").Stripe.Subscription;
+        const fields = stripeSubscriptionToPrismaFields(sub, {
+          planOverride: "FREE",
+        });
+
+        await prisma.subscription.updateMany({
+          where: { stripeSubscriptionId: sub.id },
+          data: fields,
+        });
+        break;
+      }
+
       case "invoice.payment_failed": {
-        const inv = event.data.object as Stripe.Invoice;
-        if (inv.subscription) {
-          await prisma.subscription.updateMany({
-            where: { stripeSubscriptionId: inv.subscription as string },
-            data: { status: "past_due" },
-          });
+        const inv = event.data.object as import("stripe").Stripe.Invoice;
+        const subscriptionId = invoiceSubscriptionId(inv);
+        if (subscriptionId) {
+          try {
+            const sub = await stripe.subscriptions.retrieve(subscriptionId);
+            const fields = stripeSubscriptionToPrismaFields(sub);
+            await prisma.subscription.updateMany({
+              where: { stripeSubscriptionId: subscriptionId },
+              data: fields,
+            });
+          } catch (e) {
+            console.error("[stripe webhook] invoice.payment_failed", e);
+            await prisma.subscription.updateMany({
+              where: { stripeSubscriptionId: subscriptionId },
+              data: { status: mapStripeSubscriptionStatus("past_due") },
+            });
+          }
         }
         break;
       }

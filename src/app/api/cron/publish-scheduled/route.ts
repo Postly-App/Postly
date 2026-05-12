@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { publishPost } from "@/lib/social";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,32 +14,30 @@ export async function GET(req: Request) {
   const now = new Date();
   const due = await prisma.post.findMany({
     where: { status: "SCHEDULED", scheduledAt: { lte: now } },
-    include: { socialAccount: true },
+    select: { id: true, userId: true },
     take: 50,
   });
 
-  const results = await Promise.allSettled(
-    due.map(async (post) => {
-      try {
-        // TODO: dispatch to provider-specific publisher
-        await prisma.post.update({
-          where: { id: post.id },
-          data: { status: "PUBLISHED", publishedAt: new Date() },
-        });
-        return { id: post.id, ok: true };
-      } catch (err) {
-        await prisma.post.update({
-          where: { id: post.id },
-          data: { status: "FAILED", errorMessage: (err as Error).message },
-        });
-        throw err;
-      }
-    })
+  const settled = await Promise.allSettled(
+    due.map((post) => publishPost(post.id, post.userId))
   );
 
+  let published = 0;
+  let failed = 0;
+  for (let i = 0; i < settled.length; i++) {
+    const r = settled[i];
+    if (r.status === "rejected") {
+      failed++;
+      continue;
+    }
+    const allOk = r.value.every((row) => row.success);
+    if (allOk) published++;
+    else failed++;
+  }
+
   return NextResponse.json({
-    processed: results.length,
-    succeeded: results.filter((r) => r.status === "fulfilled").length,
-    failed: results.filter((r) => r.status === "rejected").length,
+    processed: due.length,
+    published,
+    failed,
   });
 }

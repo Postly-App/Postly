@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { getUserPosts, createPost } from "@/lib/db/posts"
 import type { PostStatus } from "@prisma/client"
+import { normalizePlatformId, normalizePlatformIds } from "@/lib/platforms"
 
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions)
@@ -36,9 +37,33 @@ export async function POST(req: Request) {
       )
     }
 
+    if (!Array.isArray(platforms) || !platforms.every((p) => typeof p === "string")) {
+      return NextResponse.json(
+        { error: "platforms doit être un tableau de chaînes." },
+        { status: 400 }
+      )
+    }
+
+    for (const p of platforms) {
+      if (!normalizePlatformId(p)) {
+        return NextResponse.json(
+          { error: `Plateforme non supportée : ${p}` },
+          { status: 400 }
+        )
+      }
+    }
+
+    const normalizedPlatforms = normalizePlatformIds(platforms)
+    if (normalizedPlatforms.length === 0) {
+      return NextResponse.json(
+        { error: "Au moins une plateforme valide est requise." },
+        { status: 400 }
+      )
+    }
+
     const post = await createPost(session.user.id, {
       content,
-      platforms,
+      platforms: normalizedPlatforms,
       scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
       mediaUrls,
       status: scheduledAt ? "SCHEDULED" : "DRAFT",
