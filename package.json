@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "NEXT_TURBOPACK=0 next build",
+    "postinstall": "prisma generate",
+    "build": "prisma generate && NEXT_TURBOPACK=0 next build",
     "start": "next start",
     "lint": "eslint"
   },

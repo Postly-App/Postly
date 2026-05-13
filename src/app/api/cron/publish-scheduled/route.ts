@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import type { Prisma } from "@prisma/client";
+import { PostStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { publishPost } from "@/lib/social";
 import { logger } from "@/lib/logger";
@@ -15,19 +17,22 @@ export async function GET(req: Request) {
 
   const now = new Date();
   const staleBefore = new Date(now.getTime() - PUBLISH_STALE_PROCESSING_MS);
+
+  const whereDuePosts: Prisma.PostWhereInput = {
+    OR: [
+      { status: PostStatus.SCHEDULED, scheduledAt: { lte: now } },
+      {
+        status: PostStatus.PROCESSING,
+        OR: [
+          { processingStartedAt: { lte: staleBefore } },
+          { processingStartedAt: null, updatedAt: { lte: staleBefore } },
+        ],
+      },
+    ],
+  };
+
   const due = await prisma.post.findMany({
-    where: {
-      OR: [
-        { status: "SCHEDULED", scheduledAt: { lte: now } },
-        {
-          status: "PROCESSING",
-          OR: [
-            { processingStartedAt: { lte: staleBefore } },
-            { processingStartedAt: null, updatedAt: { lte: staleBefore } },
-          ],
-        },
-      ],
-    },
+    where: whereDuePosts,
     select: { id: true, userId: true },
     take: 50,
     orderBy: [{ scheduledAt: "asc" }, { id: "asc" }],
