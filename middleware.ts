@@ -3,8 +3,8 @@ import { getToken } from "next-auth/jwt";
 import { getNextAuthSecret } from "@/lib/env/auth";
 import { rateLimitCredentialsLogin } from "@/lib/ratelimit/credentials-login";
 
-const PUBLIC_PATHS = ["/", "/login", "/register", "/signup", "/forgot-password", "/reset-password", "/pricing", "/about", "/terms", "/privacy"];
-const PUBLIC_PREFIXES = ["/api/auth", "/api/webhooks", "/api/cron", "/_next", "/favicon", "/images", "/fonts"];
+const PUBLIC_PATHS = ["/", "/login", "/register", "/signup", "/forgot-password", "/reset-password", "/pricing", "/about", "/terms", "/privacy", "/compare", "/contact"];
+const PUBLIC_PREFIXES = ["/api/auth", "/api/webhooks", "/api/cron", "/api/chat", "/api/contact", "/_next", "/favicon", "/images", "/fonts"];
 
 function isPublic(pathname: string) {
   if (PUBLIC_PATHS.includes(pathname)) return true;

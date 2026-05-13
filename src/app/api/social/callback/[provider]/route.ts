@@ -39,7 +39,7 @@ export async function GET(
   const canonical = normalizePlatformId(slugRaw);
   if (!canonical) {
     return NextResponse.redirect(
-      new URL("/dashboard/accounts?error=unsupported_platform", req.url)
+      new URL("/settings?social_error=unsupported_platform", req.url)
     );
   }
 
@@ -49,19 +49,19 @@ export async function GET(
 
   if (error) {
     return NextResponse.redirect(
-      new URL(`/dashboard/accounts?error=${encodeURIComponent(error)}`, req.url)
+      new URL(`/settings?social_error=${encodeURIComponent(error)}`, req.url)
     );
   }
   if (!code) {
     return NextResponse.redirect(
-      new URL("/dashboard/accounts?error=missing_code", req.url)
+      new URL("/settings?social_error=missing_code", req.url)
     );
   }
 
   const endpoint = tokenEndpointForPlatform(canonical);
   if (!endpoint) {
     return NextResponse.redirect(
-      new URL("/dashboard/accounts?error=unsupported", req.url)
+      new URL("/settings?social_error=unsupported", req.url)
     );
   }
 
@@ -71,7 +71,7 @@ export async function GET(
 
   if (!clientId || !clientSecret) {
     return NextResponse.redirect(
-      new URL("/dashboard/accounts?error=missing_oauth_config", req.url)
+      new URL("/settings?social_error=missing_oauth_config", req.url)
     );
   }
 
@@ -120,7 +120,7 @@ export async function GET(
       if (e instanceof SocialTokenEncryptionConfigurationError) {
         logSocialTokenCryptoFailure("oauth-callback", e);
         return NextResponse.redirect(
-          new URL("/dashboard/accounts?error=social_token_crypto", req.url)
+          new URL("/settings?social_error=social_token_crypto", req.url)
         );
       }
       throw e;
@@ -154,7 +154,7 @@ export async function GET(
 
     return NextResponse.redirect(
       new URL(
-        `/dashboard/accounts?connected=${encodeURIComponent(canonical)}`,
+        `/settings?social_connected=${encodeURIComponent(canonical)}`,
         req.url
       )
     );
@@ -167,7 +167,7 @@ export async function GET(
       err: e,
     });
     return NextResponse.redirect(
-      new URL("/dashboard/accounts?error=token_exchange", req.url)
+      new URL("/settings?social_error=token_exchange", req.url)
     );
   }
 }

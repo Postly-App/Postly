@@ -1,18 +1,19 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { signOut, useSession } from "next-auth/react";
 import SocialIcon from "@/components/SocialIcon";
 import { toast } from "sonner";
 
 const PLATFORMS = [
-  { id: "INSTAGRAM", label: "Instagram",  color: "#E1306C", bg: "rgba(225,48,108,0.12)",  desc: "Publie photos, reels et stories" },
-  { id: "TWITTER",   label: "Twitter / X", color: "#1DA1F2", bg: "rgba(29,161,242,0.12)",  desc: "Tweets, threads et médias" },
-  { id: "LINKEDIN",  label: "LinkedIn",   color: "#0A66C2", bg: "rgba(10,102,194,0.12)",  desc: "Posts professionnels et articles" },
-  { id: "TIKTOK",    label: "TikTok",     color: "#69C9D0", bg: "rgba(105,201,208,0.12)", desc: "Vidéos et posts texte" },
-  { id: "YOUTUBE",   label: "YouTube",    color: "#FF0000", bg: "rgba(255,0,0,0.1)",      desc: "Shorts et vidéos longues" },
   { id: "FACEBOOK",  label: "Facebook",   color: "#1877F2", bg: "rgba(24,119,242,0.12)",  desc: "Posts sur pages et groupes" },
+  { id: "INSTAGRAM", label: "Instagram",  color: "#E1306C", bg: "rgba(225,48,108,0.12)",  desc: "Publie photos, reels et stories" },
+  { id: "YOUTUBE",   label: "YouTube",    color: "#FF0000", bg: "rgba(255,0,0,0.1)",      desc: "Shorts et vidéos longues" },
+  { id: "LINKEDIN",  label: "LinkedIn",   color: "#0A66C2", bg: "rgba(10,102,194,0.12)",  desc: "Posts professionnels et articles" },
+  { id: "TWITTER",   label: "Twitter / X", color: "#1DA1F2", bg: "rgba(29,161,242,0.12)",  desc: "Tweets, threads et médias" },
   { id: "THREADS",   label: "Threads",    color: "#9B99B5", bg: "rgba(255,255,255,0.06)", desc: "Posts courts et fils de discussion" },
+  { id: "PINTEREST", label: "Pinterest",  color: "#BD081C", bg: "rgba(189,8,28,0.12)",   desc: "Épingles et tableaux" },
+  { id: "TIKTOK",    label: "TikTok",     color: "#69C9D0", bg: "rgba(105,201,208,0.12)", desc: "Vidéos et posts texte" },
 ];
 
 const TABS = ["Profil", "Compte", "Notifications", "Sécurité", "Comptes"] as const;
@@ -43,11 +44,24 @@ export default function SettingsPage() {
   const newPasswordRef = useRef<HTMLInputElement>(null);
   const confirmPassRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    const ok = p.get("social_connected");
+    const err = p.get("social_error");
+    if (ok) {
+      toast.success(`Réseau ${ok} connecté.`);
+      window.history.replaceState({}, "", "/settings");
+    }
+    if (err) {
+      toast.error(`Connexion réseau : ${decodeURIComponent(err)}`);
+      window.history.replaceState({}, "", "/settings");
+    }
+  }, []);
+
   const handleConnect = async (platformId: string) => {
     setConnecting(platformId);
-    await new Promise((r) => setTimeout(r, 800));
-    setConnecting(null);
-    toast.info(`Connexion à ${platformId} bientôt disponible`);
+    const slug = platformId.toLowerCase();
+    window.location.href = `/api/auth/${slug}/connect`;
   };
 
   const handleSaveProfile = async () => {

@@ -19,6 +19,8 @@ export type AppLimiters = {
   forgotEmail: Ratelimit
   publishUser: Ratelimit
   aiChatUser: Ratelimit
+  visitorChatIp: Ratelimit
+  contactIp: Ratelimit
   stripeIp: Ratelimit
 }
 
@@ -32,6 +34,8 @@ export function createLimiters(redis: Redis): AppLimiters {
     forgotEmail: sliding(redis, "forgot-email", L.forgotEmail.max, L.forgotEmail.window),
     publishUser: sliding(redis, "publish-user", L.publishUser.max, L.publishUser.window),
     aiChatUser: sliding(redis, "ai-chat-user", L.aiChatUser.max, L.aiChatUser.window),
+    visitorChatIp: sliding(redis, "visitor-chat-ip", L.visitorChatIp.max, L.visitorChatIp.window),
+    contactIp: sliding(redis, "contact-ip", L.contactIp.max, L.contactIp.window),
     stripeIp: sliding(redis, "stripe-ip", L.stripeIp.max, L.stripeIp.window),
   }
 }

@@ -12,6 +12,7 @@ import Marquee from "@/components/cinematic/Marquee";
 import BootSplash from "@/components/cinematic/BootSplash";
 import LenisProvider from "@/components/cinematic/LenisProvider";
 import CustomCursor from "@/components/cinematic/CustomCursor";
+import LandingChatWidget from "@/components/landing/LandingChatWidget";
 
 const CityScene = dynamic(() => import("@/components/cinematic/CityScene"), {
   ssr: false,
@@ -59,9 +60,10 @@ export default function HomePage() {
         <Marquee />
         <FeaturesSection />
         <HowItWorks />
-        <TestimonialsSection />
+        <ComparisonTeaserSection />
         <CTASection />
         <FooterSection />
+        <LandingChatWidget />
       </div>
       </div>
     </LenisProvider>
@@ -120,6 +122,18 @@ function TopNav() {
       <Logo size={32} />
 
       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+        <Link href="/compare" style={{
+          padding: "6px 16px", borderRadius: 10, fontSize: "0.875rem", fontWeight: 500,
+          color: "var(--clr-muted)", transition: "var(--transition)",
+        }}
+          className="nav-link-hover"
+        >Comparer</Link>
+        <Link href="/contact" style={{
+          padding: "6px 16px", borderRadius: 10, fontSize: "0.875rem", fontWeight: 500,
+          color: "var(--clr-muted)", transition: "var(--transition)",
+        }}
+          className="nav-link-hover"
+        >Contact</Link>
         <Link href="/pricing" style={{
           padding: "6px 16px", borderRadius: 10, fontSize: "0.875rem", fontWeight: 500,
           color: "var(--clr-muted)", transition: "var(--transition)",
@@ -414,84 +428,75 @@ function HowItWorks() {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   TESTIMONIALS — glass cards
+   COMPARAISON — lien vers page factuelle (pas de faux avis)
 ═══════════════════════════════════════════════════════════ */
-function TestimonialsSection() {
-  const testimonials = [
-    {
-      stars: "★★★★★",
-      quote: "Postly a transformé ma façon de gérer mes réseaux. Je gagne plus de 5 heures par semaine et mon engagement a augmenté de 40%. Un outil absolument indispensable !",
-      name: "Sophie Martin", role: "Spécialiste Marketing, TechStart SAS",
-      initials: "SM", bg: "linear-gradient(135deg,var(--clr-primary),#5B3EE8)",
-    },
-    {
-      stars: "★★★★★",
-      quote: "L'assistant IA est bluffant. Il me propose des idées de contenu que je n'aurais jamais imaginées et les hashtags sont toujours ultra-pertinents. Je recommande vivement.",
-      name: "Lucas Dupont", role: "Créateur de Contenu, 85K abonnés",
-      initials: "LD", bg: "linear-gradient(135deg,#22D3A0,#16A87E)",
-    },
-    {
-      stars: "★★★★★",
-      quote: "Nous gérons 12 marques avec Postly. Les analytics sont détaillés, l'interface est intuitive et le support est réactif. Notre agence ne pourrait plus s'en passer.",
-      name: "Camille Rousseau", role: "Directrice, Agence Créative Lumière",
-      initials: "CR", bg: "linear-gradient(135deg,#FC5C7C,#C0204A)",
-    },
-  ];
-
+function ComparisonTeaserSection() {
   return (
     <section style={{ padding: "120px 0", position: "relative" }}>
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px" }}>
         <div style={{ textAlign: "center" }}>
-          <SectionLabel>Témoignages</SectionLabel>
-          <SectionTitle>Ce que disent nos <span className="grad-text">clients</span></SectionTitle>
-          <SectionSub>Rejoignez des milliers de créateurs et marketeurs qui font confiance à Postly.</SectionSub>
+          <SectionLabel>Transparence</SectionLabel>
+          <SectionTitle>Postly <span className="grad-text">vs</span> les outils du marché</SectionTitle>
+          <SectionSub>
+            Tableau comparatif factuel (Buffer, Hootsuite, Later, Sprout Social) — sans témoignages inventés.
+          </SectionSub>
         </div>
 
         <motion.div
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-80px" }}
-          variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.1 } } }}
-          style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 24, marginTop: 60, perspective: 1400 }}
+          variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.08 } } }}
+          style={{ marginTop: 48, display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 20 }}
         >
-          {testimonials.map((t) => (
-            <motion.article
-              key={t.name}
-              variants={{ hidden: { opacity: 0, y: 24 }, visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE } } }}
+          {[
+            "Comparaison des familles de fonctionnalités (planification, analytics, IA, public).",
+            "Tarifs : vérifier les grilles officielles des concurrents avant toute décision.",
+            "Postly cible les créateurs et PME francophones avec une interface unique et des tarifs lisibles.",
+          ].map((text) => (
+            <motion.div
+              key={text}
+              variants={{ hidden: { opacity: 0, y: 18 }, visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: EASE } } }}
             >
               <TiltCard
                 intensity={5}
                 style={{
                   background: "linear-gradient(180deg, rgba(17,17,24,0.7), rgba(13,13,20,0.85))",
                   border: "1px solid rgba(255,255,255,0.08)",
-                  borderRadius: 24, padding: 32,
+                  borderRadius: 22,
+                  padding: 26,
                   height: "100%",
                   backdropFilter: "blur(14px)",
                   WebkitBackdropFilter: "blur(14px)",
-                  boxShadow: "0 30px 60px -20px rgba(0,0,0,0.5)",
+                  color: "var(--clr-muted)",
+                  fontSize: "0.95rem",
+                  lineHeight: 1.7,
                 }}
               >
-                <div style={{ color: "#FFB800", marginBottom: 20, fontSize: "1rem", letterSpacing: 2 }}>{t.stars}</div>
-                <p style={{ fontSize: "1rem", lineHeight: 1.75, color: "var(--clr-text)", marginBottom: 24, fontStyle: "italic" }}>
-                  &ldquo;{t.quote}&rdquo;
-                </p>
-                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                  <div style={{
-                    width: 44, height: 44, borderRadius: "50%",
-                    background: t.bg,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontWeight: 800, fontSize: "0.9rem", color: "#fff", flexShrink: 0,
-                    boxShadow: "0 0 20px rgba(124,92,252,0.3)",
-                  }}>{t.initials}</div>
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: "0.9rem" }}>{t.name}</div>
-                    <div style={{ fontSize: "0.8rem", color: "var(--clr-muted)", marginTop: 2 }}>{t.role}</div>
-                  </div>
-                </div>
+                {text}
               </TiltCard>
-            </motion.article>
+            </motion.div>
           ))}
         </motion.div>
+
+        <div style={{ textAlign: "center", marginTop: 44 }}>
+          <MagneticLink
+            href="/compare"
+            strength={16}
+            style={{
+              display: "inline-flex",
+              padding: "14px 28px",
+              borderRadius: 22,
+              fontWeight: 700,
+              fontSize: "1rem",
+              background: "linear-gradient(135deg,var(--clr-primary),#5B3EE8)",
+              color: "#fff",
+              boxShadow: "0 0 32px rgba(124,92,252,0.45)",
+            }}
+          >
+            Voir le tableau comparatif →
+          </MagneticLink>
+        </div>
       </div>
     </section>
   );
@@ -538,7 +543,7 @@ function CTASection() {
               Prêt à <span className="grad-text">décupler</span> votre présence ?
             </h2>
             <p style={{ color: "var(--clr-muted)", fontSize: "1.1rem", maxWidth: 480, margin: "0 auto 40px", lineHeight: 1.7 }}>
-              Rejoignez plus de 15 000 créateurs et équipes marketing qui utilisent Postly pour grandir sur les réseaux sociaux.
+              Passez à l&apos;action : planifiez, publiez et analysez depuis un seul espace — avec ou sans abonnement payant.
             </p>
             <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
               <MagneticLink
@@ -595,8 +600,8 @@ function FooterSection() {
           </div>
 
           {([
-            { title: "Produit",    links: [["Tarifs", "/pricing"], ["Connexion", "/login"], ["Inscription", "/signup"]] },
-            { title: "Ressources", links: [["Support", "mailto:contact@postly.app"], ["Contact", "mailto:contact@postly.app"]] },
+            { title: "Produit",    links: [["Tarifs", "/pricing"], ["Comparer", "/compare"], ["Connexion", "/login"], ["Inscription", "/signup"]] },
+            { title: "Ressources", links: [["Contact", "/contact"], ["Support", "mailto:postlyservice@gmail.com"]] },
             { title: "Entreprise", links: [["Confidentialité", "/privacy"], ["CGU", "/terms"]] },
           ] as const).map(({ title, links }) => (
             <div key={title}>

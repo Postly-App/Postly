@@ -17,6 +17,10 @@ export const RATE_LIMITS = {
   publishUser: { max: 40, window: "1 h" as const },
   /** Assistant IA dashboard — par utilisateur */
   aiChatUser: { max: 35, window: "1 h" as const },
+  /** Chat visiteur (landing) — par IP */
+  visitorChatIp: { max: 24, window: "1 h" as const },
+  /** Formulaire contact — par IP */
+  contactIp: { max: 8, window: "1 h" as const },
   /** Webhook Stripe — anti flood avant vérif signature */
   stripeIp: { max: 120, window: "1 m" as const },
 } as const
