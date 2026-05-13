@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getUserPosts } from "@/lib/db/posts";
+import { normalizePlatformId } from "@/lib/platforms";
 import { prisma } from "@/lib/prisma";
 import DashboardClient from "./DashboardClient";
 
@@ -27,9 +28,14 @@ export default async function DashboardPage() {
     prisma.socialAccount.findMany({
       where: { userId },
       select: { platform: true, accountName: true, accountId: true },
-      orderBy: { createdAt: "asc" },
+      orderBy: { updatedAt: "desc" },
     }),
   ]);
+
+  const normalizedAccounts = connectedAccounts.map((a) => ({
+    ...a,
+    platform: normalizePlatformId(a.platform) ?? a.platform,
+  }));
 
   const totalReach    = totals._sum.reach    ?? 0;
   const totalLikes    = totals._sum.likes    ?? 0;
@@ -53,7 +59,7 @@ export default async function DashboardPage() {
     <DashboardClient
       analytics={analytics}
       recentPosts={recentPosts}
-      connectedAccounts={connectedAccounts}
+      connectedAccounts={normalizedAccounts}
       user={session.user}
     />
   );

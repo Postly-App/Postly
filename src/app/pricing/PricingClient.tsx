@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import Logo from "@/components/Logo";
@@ -127,8 +127,28 @@ function FaqItem({ q, a }: { q: string; a: string }) {
 export default function PricingClient({ priceIds }: { priceIds: PriceIds }) {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fromQuery = searchParams.get("plan")?.toLowerCase();
+    let elId: string | null = null;
+    if (fromQuery === "agency") elId = "plan-agency";
+    else if (fromQuery === "pro") elId = "plan-pro";
+    if (!elId && typeof window !== "undefined") {
+      const h = window.location.hash.replace(/^#/, "");
+      if (h === "plan-pro" || h === "plan-agency") elId = h;
+    }
+    if (!elId) return;
+    const t = window.setTimeout(() => {
+      document.getElementById(elId!)?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }, 80);
+    return () => window.clearTimeout(t);
+  }, [searchParams]);
 
   const getPriceId = (planId: "pro" | "agency"): string => {
     if (planId === "pro") return billing === "monthly" ? priceIds.proMonthly : priceIds.proYearly;
@@ -278,6 +298,7 @@ export default function PricingClient({ priceIds }: { priceIds: PriceIds }) {
             const isLoading = loadingPlan === plan.id;
             return (
               <div
+                id={`plan-${plan.id}`}
                 key={plan.id}
                 style={{
                   background: "var(--clr-card)",

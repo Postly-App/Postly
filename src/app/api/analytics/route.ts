@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { normalizePlatformId, platformStorageKeys } from "@/lib/platforms"
 
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions)
@@ -10,17 +11,25 @@ export async function GET(req: Request) {
   }
 
   const { searchParams } = new URL(req.url)
-  const platform = searchParams.get("platform")
+  const platformParam = searchParams.get("platform")
   const days = parseInt(searchParams.get("days") ?? "30")
 
   const since = new Date()
   since.setDate(since.getDate() - days)
 
+  const platformCanon = platformParam ? normalizePlatformId(platformParam) : null
+  const platformWhere =
+    platformParam && platformCanon
+      ? { platform: { in: platformStorageKeys(platformCanon) } }
+      : platformParam
+        ? { platform: platformParam }
+        : {}
+
   const analytics = await prisma.analytics.findMany({
     where: {
       userId: session.user.id,
       recordedAt: { gte: since },
-      ...(platform ? { platform } : {}),
+      ...platformWhere,
     },
     orderBy: { recordedAt: "asc" },
   })

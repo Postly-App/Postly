@@ -7,22 +7,10 @@ import {
   platformStorageKeys,
 } from "@/lib/platforms"
 
-const SUPPORTED_PLATFORMS = [
-  "instagram",
-  "tiktok",
-  "twitter",
-  "linkedin",
-  "youtube",
-  "facebook",
-  "threads",
-  "pinterest",
-  "bluesky",
-]
-
 // GET /api/social/connect/[provider] — liste des comptes connectés
 export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ provider: string }> }
+  _req: Request,
+  _params: { params: Promise<{ provider: string }> }
 ) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) {
@@ -31,6 +19,7 @@ export async function GET(
 
   const accounts = await prisma.socialAccount.findMany({
     where: { userId: session.user.id },
+    orderBy: { updatedAt: "desc" },
     select: {
       id: true,
       platform: true,
@@ -39,7 +28,12 @@ export async function GET(
     },
   })
 
-  return NextResponse.json(accounts)
+  return NextResponse.json(
+    accounts.map((a) => ({
+      ...a,
+      platform: normalizePlatformId(a.platform) ?? a.platform,
+    }))
+  )
 }
 
 // POST /api/social/connect/[provider] — connecter un compte
@@ -53,15 +47,7 @@ export async function POST(
   }
 
   const { provider } = await params
-  const slug = provider.toLowerCase()
-
-  if (!SUPPORTED_PLATFORMS.includes(slug)) {
-    return NextResponse.json(
-      { error: `Plateforme "${slug}" non supportée.` },
-      { status: 400 }
-    )
-  }
-
+  const slug = provider.trim().toLowerCase()
   const canonical = normalizePlatformId(slug)
   if (!canonical) {
     return NextResponse.json(
@@ -81,12 +67,13 @@ export async function POST(
   }
 
   const keys = platformStorageKeys(canonical)
-  const existing = await prisma.socialAccount.findFirst({
+  await prisma.socialAccount.updateMany({
     where: {
       userId: session.user.id,
       accountId,
-      platform: { in: keys },
+      platform: { in: keys.filter((k) => k !== canonical) },
     },
+    data: { platform: canonical },
   })
 
   const tokenData = {
@@ -96,24 +83,30 @@ export async function POST(
     accountName,
   }
 
-  const account = existing
-    ? await prisma.socialAccount.update({
-        where: { id: existing.id },
-        data: { ...tokenData, platform: canonical },
-      })
-    : await prisma.socialAccount.create({
-        data: {
-          userId: session.user.id,
-          platform: canonical,
-          accountId,
-          accountName,
-          accessToken,
-          refreshToken,
-          expiresAt: expiresAt ? new Date(expiresAt) : null,
-        },
-      })
+  const account = await prisma.socialAccount.upsert({
+    where: {
+      userId_platform_accountId: {
+        userId: session.user.id,
+        platform: canonical,
+        accountId,
+      },
+    },
+    update: { ...tokenData, platform: canonical },
+    create: {
+      userId: session.user.id,
+      platform: canonical,
+      accountId,
+      accountName,
+      accessToken,
+      refreshToken,
+      expiresAt: expiresAt ? new Date(expiresAt) : null,
+    },
+  })
 
-  return NextResponse.json(account)
+  return NextResponse.json({
+    ...account,
+    platform: normalizePlatformId(account.platform) ?? account.platform,
+  })
 }
 
 // DELETE /api/social/connect/[provider] — déconnecter
@@ -127,7 +120,7 @@ export async function DELETE(
   }
 
   const { provider } = await params
-  const slug = provider.toLowerCase()
+  const slug = provider.trim().toLowerCase()
   const canonical = normalizePlatformId(slug)
   if (!canonical) {
     return NextResponse.json(

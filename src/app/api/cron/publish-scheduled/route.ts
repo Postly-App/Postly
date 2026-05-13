@@ -30,7 +30,8 @@ export async function GET(req: Request) {
       failed++;
       continue;
     }
-    const allOk = r.value.every((row) => row.success);
+    const allOk =
+      r.value.length > 0 && r.value.every((row) => row.success);
     if (allOk) published++;
     else failed++;
   }

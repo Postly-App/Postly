@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
+import Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
 import {
   stripe,
   stripeSubscriptionToPrismaFields,
   invoiceSubscriptionId,
-  mapStripeSubscriptionStatus,
+  prismaFieldsForMissingStripeSubscription,
 } from "@/lib/stripe";
 
 export const runtime = "nodejs";
@@ -17,7 +18,7 @@ export async function POST(req: Request) {
 
   const rawBody = await req.text();
 
-  let event: import("stripe").Stripe.Event;
+  let event: Stripe.Event;
   try {
     event = stripe.webhooks.constructEvent(
       rawBody,
@@ -32,7 +33,7 @@ export async function POST(req: Request) {
   try {
     switch (event.type) {
       case "checkout.session.completed": {
-        const s = event.data.object as import("stripe").Stripe.Checkout.Session;
+        const s = event.data.object as Stripe.Checkout.Session;
         const userId = s.metadata?.userId;
         const customerId =
           typeof s.customer === "string" ? s.customer : s.customer?.id;
@@ -62,7 +63,7 @@ export async function POST(req: Request) {
       }
 
       case "customer.subscription.updated": {
-        const sub = event.data.object as import("stripe").Stripe.Subscription;
+        const sub = event.data.object as Stripe.Subscription;
         const fields = stripeSubscriptionToPrismaFields(sub);
 
         await prisma.subscription.updateMany({
@@ -73,7 +74,7 @@ export async function POST(req: Request) {
       }
 
       case "customer.subscription.deleted": {
-        const sub = event.data.object as import("stripe").Stripe.Subscription;
+        const sub = event.data.object as Stripe.Subscription;
         const fields = stripeSubscriptionToPrismaFields(sub, {
           planOverride: "FREE",
         });
@@ -86,22 +87,28 @@ export async function POST(req: Request) {
       }
 
       case "invoice.payment_failed": {
-        const inv = event.data.object as import("stripe").Stripe.Invoice;
+        const inv = event.data.object as Stripe.Invoice;
         const subscriptionId = invoiceSubscriptionId(inv);
         if (subscriptionId) {
           try {
             const sub = await stripe.subscriptions.retrieve(subscriptionId);
-            const fields = stripeSubscriptionToPrismaFields(sub);
             await prisma.subscription.updateMany({
               where: { stripeSubscriptionId: subscriptionId },
-              data: fields,
+              data: stripeSubscriptionToPrismaFields(sub),
             });
           } catch (e) {
             console.error("[stripe webhook] invoice.payment_failed", e);
-            await prisma.subscription.updateMany({
-              where: { stripeSubscriptionId: subscriptionId },
-              data: { status: mapStripeSubscriptionStatus("past_due") },
-            });
+            if (
+              e instanceof Stripe.errors.StripeInvalidRequestError &&
+              e.code === "resource_missing"
+            ) {
+              await prisma.subscription.updateMany({
+                where: { stripeSubscriptionId: subscriptionId },
+                data: prismaFieldsForMissingStripeSubscription(),
+              });
+            } else {
+              throw e;
+            }
           }
         }
         break;

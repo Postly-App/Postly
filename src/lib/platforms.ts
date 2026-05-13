@@ -22,7 +22,10 @@ const LOWER_TO_CANON: Record<string, PlatformId> = Object.fromEntries(
   PLATFORM_IDS.map((id) => [id.toLowerCase(), id])
 ) as Record<string, PlatformId>;
 
-/** Variantes de chaîne pouvant exister en base (legacy minuscules). */
+/**
+ * Clés à utiliser dans les `where` Prisma pour couvrir d’éventuelles lignes legacy.
+ * Les écritures doivent toujours utiliser l’identifiant canonique (MAJUSCULES).
+ */
 export function platformStorageKeys(canonical: PlatformId): string[] {
   const lower = canonical.toLowerCase();
   return lower === canonical ? [canonical] : [canonical, lower];
@@ -31,9 +34,10 @@ export function platformStorageKeys(canonical: PlatformId): string[] {
 export function normalizePlatformId(raw: string): PlatformId | null {
   const t = raw.trim();
   if (!t) return null;
+  const lower = t.toLowerCase();
+  if (lower === "x") return "TWITTER";
   const upper = t.toUpperCase();
   if (CANONICAL_SET.has(upper)) return upper as PlatformId;
-  const lower = t.toLowerCase();
   if (LOWER_TO_CANON[lower]) return LOWER_TO_CANON[lower];
   if (upper === "X" || upper === "TWITTERX") return "TWITTER";
   return null;

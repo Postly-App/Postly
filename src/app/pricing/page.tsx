@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import PricingClient from "./PricingClient";
 
 export default function PricingPage() {
@@ -10,5 +11,9 @@ export default function PricingPage() {
     agencyYearly: process.env.STRIPE_AGENCY_YEARLY_PRICE_ID ?? "",
   };
 
-  return <PricingClient priceIds={priceIds} />;
+  return (
+    <Suspense fallback={null}>
+      <PricingClient priceIds={priceIds} />
+    </Suspense>
+  );
 }

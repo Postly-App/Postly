@@ -1,22 +1,24 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
+import SocialIcon from "@/components/SocialIcon";
+import { PLATFORM_IDS, type PlatformId } from "@/lib/platforms";
 
-const ITEMS = [
-  { name: "Instagram", glyph: "IG", color: "#E1306C" },
-  { name: "Twitter / X", glyph: "X", color: "#1DA1F2" },
-  { name: "LinkedIn", glyph: "in", color: "#0A66C2" },
-  { name: "TikTok", glyph: "TT", color: "#FF0050" },
-  { name: "YouTube", glyph: "YT", color: "#FF0000" },
-  { name: "Facebook", glyph: "f", color: "#1877F2" },
-  { name: "Threads", glyph: "@", color: "#9B99B5" },
-  { name: "Pinterest", glyph: "P", color: "#E60023" },
-  { name: "Bluesky", glyph: "b", color: "#0085FF" },
-];
+const DISPLAY: Partial<Record<PlatformId, string>> = {
+  INSTAGRAM: "Instagram",
+  TWITTER: "Twitter / X",
+  LINKEDIN: "LinkedIn",
+  TIKTOK: "TikTok",
+  YOUTUBE: "YouTube",
+  FACEBOOK: "Facebook",
+  THREADS: "Threads",
+  PINTEREST: "Pinterest",
+  BLUESKY: "Bluesky",
+};
 
 export default function Marquee() {
-  // Duplicate twice so the loop is seamless
-  const seq = [...ITEMS, ...ITEMS];
+  const seq = [...PLATFORM_IDS, ...PLATFORM_IDS];
 
   return (
     <section aria-label="Réseaux supportés" style={{
@@ -47,34 +49,42 @@ export default function Marquee() {
           transition={{ duration: 28, ease: "linear", repeat: Infinity }}
           style={{ display: "flex", gap: 28, width: "max-content" }}
         >
-          {seq.map((it, i) => (
-            <div
-              key={`${it.name}-${i}`}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 10,
-                padding: "10px 18px",
-                borderRadius: 14,
-                border: "1px solid rgba(255,255,255,0.06)",
-                background: "rgba(17,17,24,0.6)",
-                backdropFilter: "blur(8px)",
-                WebkitBackdropFilter: "blur(8px)",
-                whiteSpace: "nowrap",
-                flexShrink: 0,
-              }}
-            >
-              <span style={{
-                width: 26, height: 26, borderRadius: 8,
-                background: `linear-gradient(135deg, ${it.color}, ${it.color}aa)`,
-                color: "#fff",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: "0.7rem", fontWeight: 800,
-                boxShadow: `0 0 16px ${it.color}40`,
-              }}>{it.glyph}</span>
-              <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "rgba(241,240,255,0.85)" }}>{it.name}</span>
-            </div>
-          ))}
+          {seq.map((platformId, i) => {
+            const label = DISPLAY[platformId] ?? platformId;
+            const plan = i % 2 === 0 ? "pro" : "agency";
+            return (
+              <Link
+                key={`${platformId}-${i}`}
+                href={`/pricing?plan=${plan}`}
+                scroll={false}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "10px 18px",
+                  borderRadius: 14,
+                  border: "1px solid rgba(255,255,255,0.06)",
+                  background: "rgba(17,17,24,0.6)",
+                  backdropFilter: "blur(8px)",
+                  WebkitBackdropFilter: "blur(8px)",
+                  whiteSpace: "nowrap",
+                  flexShrink: 0,
+                  textDecoration: "none",
+                  color: "inherit",
+                  cursor: "pointer",
+                }}
+              >
+                <span style={{
+                  width: 26, height: 26, borderRadius: 8,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  flexShrink: 0,
+                }}>
+                  <SocialIcon platform={platformId} size={22} />
+                </span>
+                <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "rgba(241,240,255,0.85)" }}>{label}</span>
+              </Link>
+            );
+          })}
         </motion.div>
       </div>
     </section>

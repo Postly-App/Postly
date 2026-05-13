@@ -5,7 +5,11 @@ import type { Plan, SubscriptionStatus } from "@prisma/client";
 /** Version API attendue par le SDK Stripe installé (cf. `Stripe.LatestApiVersion`). */
 export const STRIPE_API_VERSION = "2026-04-22.dahlia" as const;
 
-export const STRIPE_STATUS_MAP: Record<Stripe.Subscription.Status, SubscriptionStatus> = {
+/**
+ * Source unique Stripe → Prisma pour le champ `Subscription.status`.
+ * Toute persistance de statut doit passer par `mapStripeSubscriptionStatus` (dérivé de cette table).
+ */
+export const STRIPE_STATUS_MAP = {
   active: "ACTIVE",
   trialing: "TRIALING",
   past_due: "PAST_DUE",
@@ -14,13 +18,36 @@ export const STRIPE_STATUS_MAP: Record<Stripe.Subscription.Status, SubscriptionS
   incomplete: "INCOMPLETE",
   incomplete_expired: "INCOMPLETE_EXPIRED",
   paused: "PAUSED",
-};
+} as const satisfies Record<Stripe.Subscription.Status, SubscriptionStatus>;
+
+/** Clé de statut Stripe `canceled` (seul littéral Stripe autorisé hors de `STRIPE_STATUS_MAP`). */
+export const STRIPE_SUBSCRIPTION_CANCELED = "canceled" as const satisfies Stripe.Subscription.Status;
 
 /** Toujours passer par ici pour persister un statut d’abonnement Stripe → enum Prisma (aucune chaîne brute Stripe en DB). */
 export function mapStripeSubscriptionStatus(
   status: Stripe.Subscription.Status
 ): SubscriptionStatus {
-  return STRIPE_STATUS_MAP[status];
+  const mapped = STRIPE_STATUS_MAP[status];
+  if (!mapped) {
+    throw new Error(`Statut d'abonnement Stripe inconnu ou non mappé: ${String(status)}`);
+  }
+  return mapped;
+}
+
+/**
+ * Même sémantique que `customer.subscription.deleted` lorsque l’objet Subscription
+ * n’est plus retourné par l’API (ex. après suppression) : accès produit FREE, statut annulé.
+ */
+export function prismaFieldsForMissingStripeSubscription(): {
+  plan: Plan;
+  status: SubscriptionStatus;
+  cancelAtPeriodEnd: boolean;
+} {
+  return {
+    plan: "FREE",
+    status: mapStripeSubscriptionStatus(STRIPE_SUBSCRIPTION_CANCELED),
+    cancelAtPeriodEnd: false,
+  };
 }
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
@@ -89,13 +116,20 @@ export function stripeSubscriptionToPrismaFields(
   };
 }
 
-/** ID d’abonnement Stripe depuis une facture (API récente : `parent.subscription_details`). */
+/** ID d’abonnement Stripe depuis une facture (`parent` API récente + repli `subscription` hérité sur les payloads webhook). */
 export function invoiceSubscriptionId(inv: Stripe.Invoice): string | null {
   const parent = inv.parent;
-  if (!parent || parent.type !== "subscription_details") return null;
-  const sub = parent.subscription_details?.subscription;
-  if (!sub) return null;
-  return typeof sub === "string" ? sub : sub.id;
+  if (parent?.type === "subscription_details") {
+    const sub = parent.subscription_details?.subscription;
+    if (sub) return typeof sub === "string" ? sub : sub.id;
+  }
+  const legacySub = (
+    inv as Stripe.Invoice & {
+      subscription?: string | Stripe.Subscription | null;
+    }
+  ).subscription;
+  if (!legacySub) return null;
+  return typeof legacySub === "string" ? legacySub : legacySub.id;
 }
 
 export async function getOrCreateStripeCustomer(userId: string, email: string): Promise<string> {

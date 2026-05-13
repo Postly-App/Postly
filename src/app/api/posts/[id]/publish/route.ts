@@ -16,10 +16,10 @@ export async function POST(
 
   try {
     const results = await publishPost(id, session.user.id)
-    const hasFailures = results.some((r) => !r.success)
+    const success = results.length > 0 && results.every((r) => r.success)
 
     return NextResponse.json({
-      success: !hasFailures,
+      success,
       results,
     })
   } catch (error) {
