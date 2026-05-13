@@ -4,6 +4,10 @@ import { authOptions } from "@/lib/auth"
 import { getPostById, deletePost } from "@/lib/db/posts"
 import { prisma } from "@/lib/prisma"
 import { normalizePlatformId, normalizePlatformIds } from "@/lib/platforms"
+import {
+  isMediaValidationError,
+  parseAndValidateMediaUrlList,
+} from "@/lib/uploads/validation"
 
 // GET /api/posts/[id]
 export async function GET(
@@ -77,6 +81,21 @@ export async function PATCH(
     nextStatus = status
   }
 
+  let mediaUrlsPayload: string[] | undefined
+  if (Array.isArray(mediaUrls)) {
+    try {
+      mediaUrlsPayload = parseAndValidateMediaUrlList(mediaUrls)
+    } catch (e) {
+      if (isMediaValidationError(e)) {
+        return NextResponse.json(
+          { error: e.message, code: e.code },
+          { status: 400 }
+        )
+      }
+      throw e
+    }
+  }
+
   const updated = await prisma.post.update({
     where: { id },
     data: {
@@ -85,7 +104,7 @@ export async function PATCH(
       ...(scheduledAt !== undefined
         ? { scheduledAt: scheduledAt ? new Date(scheduledAt) : null }
         : {}),
-      ...(Array.isArray(mediaUrls) ? { mediaUrls } : {}),
+      ...(mediaUrlsPayload !== undefined ? { mediaUrls: mediaUrlsPayload } : {}),
       ...(nextStatus ? { status: nextStatus } : {}),
     },
   })

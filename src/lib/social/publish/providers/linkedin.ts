@@ -1,7 +1,12 @@
 import type { SocialAccount } from "@prisma/client"
 import type { PublishContext } from "../../types"
 import { ensureFreshAccessToken } from "../token-refresh"
-import { withRetry } from "../retry"
+import {
+  fetchWithTimeout,
+  PUBLISH_FETCH_TIMEOUT_MS,
+  providerHttpErrorFromStatus,
+  withPublishRetry,
+} from "../retry-policy"
 
 const API = "https://api.linkedin.com/v2"
 
@@ -26,23 +31,27 @@ export async function publishLinkedInMember(
     visibility: { "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC" },
   }
 
-  const json = await withRetry(
+  const json = await withPublishRetry(
     async () => {
-      const res = await fetch(`${API}/ugcPosts`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${acc.accessToken}`,
-          "Content-Type": "application/json",
-          "X-Restli-Protocol-Version": "2.0.0",
-          "LinkedIn-Version": "202401",
+      const res = await fetchWithTimeout(
+        `${API}/ugcPosts`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${acc.accessToken}`,
+            "Content-Type": "application/json",
+            "X-Restli-Protocol-Version": "2.0.0",
+            "LinkedIn-Version": "202401",
+          },
+          body: JSON.stringify(body),
         },
-        body: JSON.stringify(body),
-      })
+        PUBLISH_FETCH_TIMEOUT_MS
+      )
       const raw = await res.text()
-      if (!res.ok) throw new Error(`LinkedIn HTTP ${res.status} : ${raw.slice(0, 800)}`)
+      if (!res.ok) throw providerHttpErrorFromStatus("LinkedIn", res.status, raw.slice(0, 400))
       return JSON.parse(raw) as { id?: string }
     },
-    { retries: 2, baseDelayMs: 600 }
+    { maxAttempts: 3, baseDelayMs: 600 }
   )
 
   if (!json.id) throw new Error("LinkedIn : pas d’URN de publication retourné.")

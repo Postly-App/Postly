@@ -1,8 +1,18 @@
 import { NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
+import { enforceRateLimit, getClientIp } from "@/lib/ratelimit"
+import { logger } from "@/lib/logger"
 
 export async function POST(req: Request) {
+  const ip = getClientIp(req)
+  const blocked = await enforceRateLimit(
+    "registerIp",
+    `ip:${ip}`,
+    "Trop de créations de compte depuis cette adresse. Réessayez plus tard."
+  )
+  if (blocked) return blocked
+
   try {
     const { name, email, password } = await req.json()
 
@@ -56,7 +66,11 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("[REGISTER]", error)
+    logger.error("api.auth.register_failed", {
+      route: "/api/auth/register",
+      action: "POST",
+      err: error,
+    })
     return NextResponse.json(
       { error: "Erreur serveur. Réessayez." },
       { status: 500 }

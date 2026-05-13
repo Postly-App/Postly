@@ -74,6 +74,7 @@ model VerificationToken {
 enum PostStatus {
   DRAFT
   SCHEDULED
+  PROCESSING
   PUBLISHED
   FAILED
 }
@@ -87,6 +88,12 @@ model Post {
   status      PostStatus @default(DRAFT)
   scheduledAt DateTime?
   publishedAt DateTime?
+  /** Début de la tentative de publication serveur (verrou logique). */
+  processingStartedAt DateTime?
+  /** Compteur de tentatives côté serveur (cron + API). */
+  publishAttemptCount Int @default(0)
+  /** Horodatage de la dernière prise en charge publish (observabilité). */
+  lastPublishAttemptAt DateTime?
   error       String?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt

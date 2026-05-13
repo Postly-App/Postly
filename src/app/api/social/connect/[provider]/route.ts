@@ -6,6 +6,11 @@ import {
   normalizePlatformId,
   platformStorageKeys,
 } from "@/lib/platforms"
+import {
+  encryptSocialTokensForPersistence,
+  SocialTokenEncryptionConfigurationError,
+  logSocialTokenCryptoFailure,
+} from "@/lib/social/social-token-crypto"
 
 // GET /api/social/connect/[provider] — liste des comptes connectés
 export async function GET(
@@ -76,9 +81,22 @@ export async function POST(
     data: { platform: canonical },
   })
 
+  let encrypted: ReturnType<typeof encryptSocialTokensForPersistence>
+  try {
+    encrypted = encryptSocialTokensForPersistence({
+      accessToken,
+      refreshToken: refreshToken ?? null,
+    })
+  } catch (e) {
+    if (e instanceof SocialTokenEncryptionConfigurationError) {
+      logSocialTokenCryptoFailure("social-connect", e)
+      return NextResponse.json({ error: e.message }, { status: 503 })
+    }
+    throw e
+  }
+
   const tokenData = {
-    accessToken,
-    refreshToken,
+    ...encrypted,
     expiresAt: expiresAt ? new Date(expiresAt) : null,
     accountName,
   }
@@ -97,15 +115,21 @@ export async function POST(
       platform: canonical,
       accountId,
       accountName,
-      accessToken,
-      refreshToken,
+      accessToken: encrypted.accessToken,
+      refreshToken: encrypted.refreshToken ?? null,
       expiresAt: expiresAt ? new Date(expiresAt) : null,
     },
   })
 
   return NextResponse.json({
-    ...account,
+    id: account.id,
+    userId: account.userId,
     platform: normalizePlatformId(account.platform) ?? account.platform,
+    accountId: account.accountId,
+    accountName: account.accountName,
+    expiresAt: account.expiresAt,
+    createdAt: account.createdAt,
+    updatedAt: account.updatedAt,
   })
 }
 

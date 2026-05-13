@@ -1,7 +1,12 @@
 import type { SocialAccount } from "@prisma/client"
 import type { PublishContext } from "../../types"
 import { ensureFreshAccessToken } from "../token-refresh"
-import { withRetry } from "../retry"
+import {
+  fetchWithTimeout,
+  PUBLISH_FETCH_TIMEOUT_MS,
+  providerHttpErrorFromStatus,
+  withPublishRetry,
+} from "../retry-policy"
 
 const GRAPH = "https://graph.facebook.com/v18.0"
 
@@ -26,16 +31,18 @@ export async function publishInstagramBusiness(
     access_token: token,
   })
 
-  const create = await withRetry(
+  const create = await withPublishRetry(
     async () => {
-      const res = await fetch(`${GRAPH}/${igUserId}/media?${containerParams.toString()}`, {
-        method: "POST",
-      })
+      const res = await fetchWithTimeout(
+        `${GRAPH}/${igUserId}/media?${containerParams.toString()}`,
+        { method: "POST" },
+        PUBLISH_FETCH_TIMEOUT_MS
+      )
       const raw = await res.text()
-      if (!res.ok) throw new Error(`Instagram HTTP ${res.status} : ${raw.slice(0, 800)}`)
-      return JSON.parse(raw) as { id?: string; error?: { message: string } }
+      if (!res.ok) throw providerHttpErrorFromStatus("Instagram", res.status, raw.slice(0, 400))
+      return JSON.parse(raw) as { id?: string; error?: { message: string; code?: string | number } }
     },
-    { retries: 2, baseDelayMs: 600 }
+    { maxAttempts: 3, baseDelayMs: 600 }
   )
 
   if (create.error?.message) throw new Error(create.error.message)
@@ -46,16 +53,18 @@ export async function publishInstagramBusiness(
     access_token: token,
   })
 
-  const pub = await withRetry(
+  const pub = await withPublishRetry(
     async () => {
-      const res = await fetch(`${GRAPH}/${igUserId}/media_publish?${publishParams.toString()}`, {
-        method: "POST",
-      })
+      const res = await fetchWithTimeout(
+        `${GRAPH}/${igUserId}/media_publish?${publishParams.toString()}`,
+        { method: "POST" },
+        PUBLISH_FETCH_TIMEOUT_MS
+      )
       const raw = await res.text()
-      if (!res.ok) throw new Error(`Instagram publish HTTP ${res.status} : ${raw.slice(0, 800)}`)
-      return JSON.parse(raw) as { id?: string; error?: { message: string } }
+      if (!res.ok) throw providerHttpErrorFromStatus("Instagram publish", res.status, raw.slice(0, 400))
+      return JSON.parse(raw) as { id?: string; error?: { message: string; code?: string | number } }
     },
-    { retries: 2, baseDelayMs: 600 }
+    { maxAttempts: 3, baseDelayMs: 600 }
   )
 
   if (pub.error?.message) throw new Error(pub.error.message)

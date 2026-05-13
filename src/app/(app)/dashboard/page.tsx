@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getUserPosts } from "@/lib/db/posts";
 import { normalizePlatformId } from "@/lib/platforms";
 import { prisma } from "@/lib/prisma";
+import { isAiChatConfigured } from "@/lib/ai/chat";
 import DashboardClient from "./DashboardClient";
 
 export const dynamic = "force-dynamic";
@@ -61,6 +62,7 @@ export default async function DashboardPage() {
       recentPosts={recentPosts}
       connectedAccounts={normalizedAccounts}
       user={session.user}
+      aiChatEnabled={isAiChatConfigured()}
     />
   );
 }

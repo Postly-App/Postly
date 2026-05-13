@@ -5,13 +5,77 @@ import GoogleProvider from "next-auth/providers/google"
 import GitHubProvider from "next-auth/providers/github"
 import bcrypt from "bcryptjs"
 import { prisma } from "./prisma"
+import {
+  getNextAuthSecret,
+  resolveUseSecureCookies,
+  validateNextAuthUrlConfig,
+} from "@/lib/env/auth"
+import { logger } from "./logger"
+
+void validateNextAuthUrlConfig()
+
+/** Durée de session JWT (secondes) — 14 jours */
+const SESSION_MAX_AGE_SEC = 14 * 24 * 60 * 60
+/** Rafraîchissement session côté client — 24 h */
+const SESSION_UPDATE_AGE_SEC = 24 * 60 * 60
+
+const OAUTH_TOKEN_KEYS = [
+  "access_token",
+  "refresh_token",
+  "id_token",
+  "oauth_token",
+  "oauth_token_secret",
+  "session_state",
+  "providerAccountId",
+] as const
+
+function stripOAuthSecretsFromJwt(token: Record<string, unknown>): void {
+  for (const k of OAUTH_TOKEN_KEYS) {
+    delete token[k]
+  }
+}
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
-  session: { strategy: "jwt" },
+  secret: getNextAuthSecret(),
+  useSecureCookies: resolveUseSecureCookies(),
+  session: {
+    strategy: "jwt",
+    maxAge: SESSION_MAX_AGE_SEC,
+    updateAge: SESSION_UPDATE_AGE_SEC,
+  },
+  jwt: {
+    maxAge: SESSION_MAX_AGE_SEC,
+  },
   pages: {
     signIn: "/login",
     error: "/login",
+  },
+  logger: {
+    error(code, metadata) {
+      if (metadata && typeof metadata === "object" && "error" in metadata) {
+        const err = (metadata as { error?: Error }).error
+        logger.error(`next_auth:${String(code)}`, {
+          route: "/api/auth/[...nextauth]",
+          provider: "next-auth",
+          err,
+        })
+        return
+      }
+      logger.error(`next_auth:${String(code)}`, {
+        route: "/api/auth/[...nextauth]",
+        provider: "next-auth",
+      })
+    },
+    warn(code) {
+      logger.warn(`next_auth:${String(code)}`, {
+        route: "/api/auth/[...nextauth]",
+        provider: "next-auth",
+      })
+    },
+    debug() {
+      /* désactivé : évite tout fuite de contexte sensible en logs */
+    },
   },
   providers: [
     GoogleProvider({
@@ -53,7 +117,15 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async jwt({ token, user }) {
-      if (user) token.id = user.id
+      const t = token as Record<string, unknown>
+      stripOAuthSecretsFromJwt(t)
+
+      if (user) {
+        t.id = user.id
+        t.sub = user.id
+      }
+
+      stripOAuthSecretsFromJwt(t)
       return token
     },
     async session({ session, token }) {

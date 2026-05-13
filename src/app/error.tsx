@@ -1,5 +1,6 @@
 "use client";
 import { useEffect } from "react";
+import { logger } from "@/lib/logger";
 
 export default function Error({
   error,
@@ -8,7 +9,13 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  useEffect(() => console.error(error), [error]);
+  useEffect(() => {
+    logger.error("client.error_boundary", {
+      route: "app:error",
+      digest: error.digest,
+      err: error,
+    });
+  }, [error]);
   return (
     <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", padding: "2rem", fontFamily: "system-ui" }}>
       <div style={{ maxWidth: 480, textAlign: "center" }}>

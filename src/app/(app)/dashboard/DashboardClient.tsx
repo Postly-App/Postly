@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import SocialIcon from "@/components/SocialIcon";
+import ChatAssistant from "@/components/ai/ChatAssistant";
 
 const PLATFORM_CONFIG: Record<string, { label: string; bg: string }> = {
   INSTAGRAM: { label: "Instagram",  bg: "linear-gradient(135deg,#E1306C,#833AB4)" },
@@ -62,9 +63,10 @@ interface Props {
     accountId: string;
   }>;
   user: { name?: string | null; email?: string | null; image?: string | null };
+  aiChatEnabled: boolean;
 }
 
-export default function DashboardClient({ analytics, recentPosts, connectedAccounts, user }: Props) {
+export default function DashboardClient({ analytics, recentPosts, connectedAccounts, user, aiChatEnabled }: Props) {
   const firstName = user.name?.split(" ")[0] ?? "toi";
   const hour      = new Date().getHours();
   const greeting  = hour < 12 ? "Bonjour" : hour < 17 ? "Bon après-midi" : "Bonsoir";
@@ -313,6 +315,7 @@ export default function DashboardClient({ analytics, recentPosts, connectedAccou
         )}
       </div>
 
+      <ChatAssistant enabled={aiChatEnabled} />
     </div>
   );
 }

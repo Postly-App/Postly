@@ -3,10 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
+import type { Plan, SubscriptionStatus } from "@prisma/client";
 import { PLANS } from "@/lib/plans";
 
-type PlanCode = "FREE" | "PRO" | "AGENCY";
-type StatusCode = "ACTIVE" | "CANCELED" | "PAST_DUE" | "TRIALING" | "INCOMPLETE";
+type PlanCode = Plan;
 
 interface Props {
   priceIds: {
@@ -17,7 +17,7 @@ interface Props {
   };
   subscription: {
     plan: PlanCode;
-    status: StatusCode;
+    status: SubscriptionStatus;
     currentPeriodEnd: string;
     cancelAtPeriodEnd: boolean;
     trialEnd: string | null;
@@ -32,12 +32,15 @@ const PLAN_LABEL: Record<PlanCode, string> = {
   AGENCY: "Agence",
 };
 
-const STATUS_LABEL: Record<StatusCode, { label: string; color: string }> = {
-  ACTIVE:     { label: "Actif",       color: "#22D3A0" },
-  TRIALING:   { label: "Essai",       color: "#9B82FD" },
-  PAST_DUE:   { label: "En retard",   color: "#FC5C7C" },
-  CANCELED:   { label: "Annulé",      color: "#9B99B5" },
-  INCOMPLETE: { label: "Incomplet",   color: "#FFB800" },
+const STATUS_LABEL: Record<SubscriptionStatus, { label: string; color: string }> = {
+  ACTIVE:               { label: "Actif",         color: "#22D3A0" },
+  TRIALING:             { label: "Essai",         color: "#9B82FD" },
+  PAST_DUE:             { label: "En retard",     color: "#FC5C7C" },
+  CANCELED:             { label: "Annulé",        color: "#9B99B5" },
+  INCOMPLETE:           { label: "Incomplet",    color: "#FFB800" },
+  INCOMPLETE_EXPIRED:   { label: "Expiré",        color: "#9B99B5" },
+  UNPAID:               { label: "Impayé",        color: "#FC5C7C" },
+  PAUSED:               { label: "En pause",      color: "#FFB800" },
 };
 
 const PRICE_FOR_PLAN: Record<PlanCode, number> = { FREE: 0, PRO: 29, AGENCY: 79 };
@@ -54,7 +57,7 @@ export default function BillingClient({ priceIds, subscription, hasStripeCustome
   const [billing, setBilling]     = useState<"monthly" | "yearly">("monthly");
 
   const currentPlan: PlanCode = subscription?.plan ?? "FREE";
-  const currentStatus: StatusCode = subscription?.status ?? "ACTIVE";
+  const currentStatus: SubscriptionStatus = subscription?.status ?? "ACTIVE";
   const currentPrice = PRICE_FOR_PLAN[currentPlan];
 
   const limits = {

@@ -1,16 +1,32 @@
 /** Télécharge une URL publique (ex. UploadThing) pour upload côté réseau. */
+
+import {
+  assertSafePublicMediaUrl,
+  MAX_IMAGE_BYTES,
+  MAX_VIDEO_BYTES,
+  MediaValidationError,
+  validateDownloadedMediaContent,
+} from "@/lib/uploads/validation"
+import { fetchWithTimeout, MEDIA_FETCH_TIMEOUT_MS } from "./retry-policy"
+
 export async function fetchRemoteMedia(
   url: string,
-  maxBytes = 12 * 1024 * 1024
+  expectedKind: "image" | "video" = "image"
 ): Promise<{ buffer: Buffer; contentType: string }> {
-  const res = await fetch(url, { redirect: "follow" })
-  if (!res.ok) throw new Error(`Média inaccessible (${res.status})`)
-  const len = res.headers.get("content-length")
-  if (len && Number(len) > maxBytes) {
-    throw new Error("Fichier média trop volumineux pour la publication.")
+  assertSafePublicMediaUrl(url)
+
+  const res = await fetchWithTimeout(url, { redirect: "follow" }, MEDIA_FETCH_TIMEOUT_MS)
+  if (!res.ok) {
+    throw new Error(`Média inaccessible (${res.status})`)
   }
+
+  const limit = expectedKind === "image" ? MAX_IMAGE_BYTES : MAX_VIDEO_BYTES
+  const len = res.headers.get("content-length")
+  if (len && Number(len) > limit) {
+    throw new MediaValidationError("Fichier média trop volumineux pour la publication.")
+  }
+
   const buf = Buffer.from(await res.arrayBuffer())
-  if (buf.length > maxBytes) throw new Error("Fichier média trop volumineux pour la publication.")
-  const contentType = res.headers.get("content-type")?.split(";")[0]?.trim() || "application/octet-stream"
-  return { buffer: buf, contentType }
+  const v = validateDownloadedMediaContent(buf, res.headers.get("content-type"), expectedKind)
+  return { buffer: v.buffer, contentType: v.contentType }
 }

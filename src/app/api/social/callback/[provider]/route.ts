@@ -5,6 +5,12 @@ import { prisma } from "@/lib/prisma";
 import { normalizePlatformId, type PlatformId } from "@/lib/platforms";
 import { resolveOAuthSocialAccount } from "@/lib/social/oauth-account";
 import { parseOAuthTokenResponse } from "@/lib/social/oauth-token-parse";
+import {
+  encryptSocialTokensForPersistence,
+  SocialTokenEncryptionConfigurationError,
+  logSocialTokenCryptoFailure,
+} from "@/lib/social/social-token-crypto";
+import { logger } from "@/lib/logger";
 
 export const runtime = "nodejs";
 
@@ -86,7 +92,9 @@ export async function GET(
 
     const rawText = await res.text();
     if (!res.ok) {
-      throw new Error(`Token exchange failed: ${rawText}`);
+      throw new Error(
+        `OAuth token exchange failed (HTTP ${res.status}). Response body is not logged to avoid leaking secrets.`
+      );
     }
 
     const tokens = parseOAuthTokenResponse(rawText, res.headers.get("content-type"));
@@ -102,6 +110,22 @@ export async function GET(
         ? new Date(Date.now() + tokens.expires_in * 1000)
         : null;
 
+    let encrypted: { accessToken: string; refreshToken?: string | null };
+    try {
+      encrypted = encryptSocialTokensForPersistence({
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token ?? null,
+      });
+    } catch (e) {
+      if (e instanceof SocialTokenEncryptionConfigurationError) {
+        logSocialTokenCryptoFailure("oauth-callback", e);
+        return NextResponse.redirect(
+          new URL("/dashboard/accounts?error=social_token_crypto", req.url)
+        );
+      }
+      throw e;
+    }
+
     await prisma.socialAccount.upsert({
       where: {
         userId_platform_accountId: {
@@ -112,8 +136,8 @@ export async function GET(
       },
       update: {
         accountName,
-        accessToken: tokens.access_token,
-        refreshToken: tokens.refresh_token ?? null,
+        accessToken: encrypted.accessToken,
+        refreshToken: encrypted.refreshToken ?? null,
         expiresAt,
         platform: canonical,
       },
@@ -122,8 +146,8 @@ export async function GET(
         platform: canonical,
         accountId,
         accountName,
-        accessToken: tokens.access_token,
-        refreshToken: tokens.refresh_token ?? null,
+        accessToken: encrypted.accessToken,
+        refreshToken: encrypted.refreshToken ?? null,
         expiresAt,
       },
     });
@@ -135,7 +159,13 @@ export async function GET(
       )
     );
   } catch (e) {
-    console.error("OAuth callback error", e);
+    logger.error("api.social.oauth_callback_failed", {
+      route: "/api/social/callback/[provider]",
+      action: "GET",
+      userId: session.user.id,
+      platform: canonical,
+      err: e,
+    });
     return NextResponse.redirect(
       new URL("/dashboard/accounts?error=token_exchange", req.url)
     );

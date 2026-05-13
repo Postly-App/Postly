@@ -1,6 +1,15 @@
 import type { SocialAccount } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import type { PlatformId } from "@/lib/platforms"
+import {
+  decryptSocialAccountForUse,
+  encryptSocialTokensForPersistence,
+} from "../social-token-crypto"
+import { logger } from "@/lib/logger"
+import {
+  fetchWithTimeout,
+  TOKEN_REFRESH_FETCH_TIMEOUT_MS,
+} from "./retry-policy"
 
 const SKEW_MS = 120_000
 
@@ -13,13 +22,26 @@ async function persistTokens(
   id: string,
   data: { accessToken: string; refreshToken?: string | null; expiresAt?: Date | null }
 ) {
+  const encrypted = encryptSocialTokensForPersistence({
+    accessToken: data.accessToken,
+    refreshToken:
+      data.refreshToken !== undefined ? data.refreshToken : undefined,
+  })
+
+  const payload: {
+    accessToken: string
+    refreshToken?: string | null
+    expiresAt?: Date | null
+  } = { accessToken: encrypted.accessToken }
+
+  if (data.refreshToken !== undefined) {
+    payload.refreshToken = encrypted.refreshToken
+  }
+  if (data.expiresAt !== undefined) payload.expiresAt = data.expiresAt
+
   await prisma.socialAccount.update({
     where: { id },
-    data: {
-      accessToken: data.accessToken,
-      ...(data.refreshToken !== undefined ? { refreshToken: data.refreshToken } : {}),
-      ...(data.expiresAt !== undefined ? { expiresAt: data.expiresAt } : {}),
-    },
+    data: payload,
   })
 }
 
@@ -38,13 +60,26 @@ async function refreshTwitter(account: SocialAccount): Promise<SocialAccount> {
     body.set("client_secret", secret)
   }
 
-  const res = await fetch("https://api.twitter.com/2/oauth2/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body,
-  })
+  const res = await fetchWithTimeout(
+    "https://api.twitter.com/2/oauth2/token",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body,
+    },
+    TOKEN_REFRESH_FETCH_TIMEOUT_MS
+  )
   const raw = await res.text()
-  if (!res.ok) throw new Error(`Twitter token refresh : ${raw.slice(0, 500)}`)
+  if (!res.ok) {
+    logger.warn("social.token_refresh.twitter_http_error", {
+      route: "publish:token-refresh",
+      platform: "TWITTER",
+      status: res.status,
+    })
+    throw new Error(
+      `Twitter token refresh failed (HTTP ${res.status}). Response body is not included to avoid leaking tokens.`
+    )
+  }
 
   const json = JSON.parse(raw) as {
     access_token: string
@@ -85,13 +120,26 @@ async function refreshLinkedIn(account: SocialAccount): Promise<SocialAccount> {
     client_secret: clientSecret,
   })
 
-  const res = await fetch("https://www.linkedin.com/oauth/v2/accessToken", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body,
-  })
+  const res = await fetchWithTimeout(
+    "https://www.linkedin.com/oauth/v2/accessToken",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body,
+    },
+    TOKEN_REFRESH_FETCH_TIMEOUT_MS
+  )
   const raw = await res.text()
-  if (!res.ok) throw new Error(`LinkedIn token refresh : ${raw.slice(0, 500)}`)
+  if (!res.ok) {
+    logger.warn("social.token_refresh.linkedin_http_error", {
+      route: "publish:token-refresh",
+      platform: "LINKEDIN",
+      status: res.status,
+    })
+    throw new Error(
+      `LinkedIn token refresh failed (HTTP ${res.status}). Response body is not included to avoid leaking tokens.`
+    )
+  }
 
   const json = JSON.parse(raw) as {
     access_token: string
@@ -125,14 +173,15 @@ export async function ensureFreshAccessToken(
   platform: PlatformId,
   account: SocialAccount
 ): Promise<SocialAccount> {
-  if (!isExpired(account)) return account
+  const accountPlain = decryptSocialAccountForUse(account)
+  if (!isExpired(accountPlain)) return accountPlain
 
   switch (platform) {
     case "TWITTER":
-      return refreshTwitter(account)
+      return refreshTwitter(accountPlain)
     case "LINKEDIN":
-      return refreshLinkedIn(account)
+      return refreshLinkedIn(accountPlain)
     default:
-      return account
+      return accountPlain
   }
 }

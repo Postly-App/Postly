@@ -50,9 +50,17 @@ export function prismaFieldsForMissingStripeSubscription(): {
   };
 }
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
-  apiVersion: STRIPE_API_VERSION,
-});
+let stripeSingleton: Stripe | null = null;
+
+/** Client Stripe (initialisation paresseuse : le build Next n’exige pas la clé). */
+export function getStripe(): Stripe {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) {
+    throw new Error("STRIPE_SECRET_KEY manquant");
+  }
+  stripeSingleton ??= new Stripe(key, { apiVersion: STRIPE_API_VERSION });
+  return stripeSingleton;
+}
 
 /** Mappe les Price IDs Stripe (env) vers l’enum Prisma `Plan`. */
 export function priceIdToPlan(priceId: string): Plan {
@@ -135,7 +143,7 @@ export function invoiceSubscriptionId(inv: Stripe.Invoice): string | null {
 export async function getOrCreateStripeCustomer(userId: string, email: string): Promise<string> {
   const sub = await prisma.subscription.findUnique({ where: { userId }, select: { stripeCustomerId: true } });
   if (sub?.stripeCustomerId && !sub.stripeCustomerId.startsWith("free_")) return sub.stripeCustomerId;
-  const customer = await stripe.customers.create({ email, metadata: { userId } });
+  const customer = await getStripe().customers.create({ email, metadata: { userId } });
   await prisma.subscription.update({ where: { userId }, data: { stripeCustomerId: customer.id } });
   return customer.id;
 }
@@ -148,7 +156,7 @@ export async function createBillingPortalSession(userId: string, returnUrl: stri
   if (!subscription?.stripeCustomerId || subscription.stripeCustomerId.startsWith("free_")) {
     throw new Error("No Stripe customer for this user");
   }
-  const session = await stripe.billingPortal.sessions.create({
+  const session = await getStripe().billingPortal.sessions.create({
     customer: subscription.stripeCustomerId,
     return_url: returnUrl,
   });

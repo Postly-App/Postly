@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { logger } from "@/lib/logger";
 
 export async function POST(req: Request) {
   try {
@@ -24,7 +25,11 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("[RESET]", error);
+    logger.error("api.auth.reset_failed", {
+      route: "/api/auth/reset",
+      action: "POST",
+      err: error,
+    });
     return NextResponse.json({ error: "Erreur serveur." }, { status: 500 });
   }
 }

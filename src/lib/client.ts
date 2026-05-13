@@ -1,14 +1,27 @@
 import { Resend } from "resend"
+import { logger } from "@/lib/logger"
 
-const resend = new Resend(process.env.RESEND_API_KEY)
 const FROM = process.env.RESEND_FROM ?? "Postly <onboarding@resend.dev>"
 
+let resendSingleton: Resend | null = null
+function getResend(): Resend | null {
+  const key = process.env.RESEND_API_KEY
+  if (!key) return null
+  if (!resendSingleton) resendSingleton = new Resend(key)
+  return resendSingleton
+}
+
 async function send(to: string, subject: string, html: string) {
-  if (!process.env.RESEND_API_KEY) return
+  const resend = getResend()
+  if (!resend) return
   try {
     await resend.emails.send({ from: FROM, to, subject, html })
   } catch (e) {
-    console.error("Email send failed:", e)
+    logger.error("email.send_failed", {
+      route: "lib:client",
+      action: "send",
+      err: e,
+    })
   }
 }
 

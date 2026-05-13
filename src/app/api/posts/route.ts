@@ -4,6 +4,11 @@ import { authOptions } from "@/lib/auth"
 import { getUserPosts, createPost } from "@/lib/db/posts"
 import type { PostStatus } from "@prisma/client"
 import { normalizePlatformId, normalizePlatformIds } from "@/lib/platforms"
+import {
+  isMediaValidationError,
+  parseAndValidateMediaUrlList,
+} from "@/lib/uploads/validation"
+import { logger } from "@/lib/logger"
 
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions)
@@ -61,17 +66,36 @@ export async function POST(req: Request) {
       )
     }
 
+    let validatedMediaUrls: string[] | undefined
+    if (mediaUrls !== undefined) {
+      try {
+        validatedMediaUrls = parseAndValidateMediaUrlList(mediaUrls)
+      } catch (e) {
+        if (isMediaValidationError(e)) {
+          return NextResponse.json(
+            { error: e.message, code: e.code },
+            { status: 400 }
+          )
+        }
+        throw e
+      }
+    }
+
     const post = await createPost(session.user.id, {
       content,
       platforms: normalizedPlatforms,
       scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
-      mediaUrls,
+      mediaUrls: validatedMediaUrls,
       status: scheduledAt ? "SCHEDULED" : "DRAFT",
     })
 
     return NextResponse.json(post, { status: 201 })
   } catch (error) {
-    console.error("[POST /api/posts]", error)
+    logger.error("api.posts.create_failed", {
+      route: "/api/posts",
+      action: "POST",
+      err: error,
+    })
     return NextResponse.json({ error: "Erreur serveur." }, { status: 500 })
   }
 }

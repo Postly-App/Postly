@@ -2,13 +2,35 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
 import { Resend } from "resend";
+import { enforceRateLimit, getClientIp } from "@/lib/ratelimit";
+import { logger } from "@/lib/logger";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function getResend(): Resend | null {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) return null;
+  return new Resend(key);
+}
 
 export async function POST(req: Request) {
   try {
     const { email } = await req.json();
     if (!email) return NextResponse.json({ error: "Email requis." }, { status: 400 });
+
+    const ip = getClientIp(req);
+    const ipBlock = await enforceRateLimit(
+      "forgotIp",
+      `ip:${ip}`,
+      "Trop de demandes de réinitialisation. Réessayez plus tard."
+    );
+    if (ipBlock) return ipBlock;
+
+    const emailKey = String(email).trim().toLowerCase();
+    const emailBlock = await enforceRateLimit(
+      "forgotEmail",
+      `email:${emailKey}`,
+      "Trop de demandes pour cette adresse e-mail. Réessayez plus tard."
+    );
+    if (emailBlock) return emailBlock;
 
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) return NextResponse.json({ success: true });
@@ -24,6 +46,14 @@ export async function POST(req: Request) {
 
     const base = process.env.APP_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
     const resetUrl = `${base}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
+
+    const resend = getResend();
+    if (!resend) {
+      return NextResponse.json(
+        { error: "Envoi d’e-mails non configuré sur ce serveur." },
+        { status: 503 }
+      );
+    }
 
     await resend.emails.send({
       from: process.env.EMAIL_FROM ?? "Postly <onboarding@resend.dev>",
@@ -43,7 +73,11 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("[FORGOT]", error);
+    logger.error("api.auth.forgot_failed", {
+      route: "/api/auth/forgot",
+      action: "POST",
+      err: error,
+    });
     return NextResponse.json({ error: "Erreur serveur." }, { status: 500 });
   }
 }

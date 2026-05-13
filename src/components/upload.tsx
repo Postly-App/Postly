@@ -2,6 +2,7 @@
 
 import { UploadButton } from "@uploadthing/react";
 import type { OurFileRouter } from "@/app/api/uploadthing/core";
+import { logger } from "@/lib/logger";
 
 interface Props {
   onUploaded?: (urls: string[]) => void;
@@ -16,7 +17,16 @@ export default function Upload({ onUploaded }: Props) {
         onUploaded?.(urls);
       }}
       onUploadError={(error) => {
-        console.error("Upload error:", error);
+        const code =
+          error && typeof error === "object" && "data" in error
+            ? String((error as { data?: { code?: unknown } }).data?.code ?? "")
+            : "";
+        logger.error("upload.client_failed", {
+          route: "components:Upload",
+          action: "onUploadError",
+          outcome: code || "unknown",
+          err: error,
+        });
       }}
     />
   );

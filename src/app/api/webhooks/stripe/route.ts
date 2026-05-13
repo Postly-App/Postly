@@ -2,8 +2,10 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
+import { enforceRateLimit, getClientIpFromHeaders } from "@/lib/ratelimit";
+import { logger } from "@/lib/logger";
 import {
-  stripe,
+  getStripe,
   stripeSubscriptionToPrismaFields,
   invoiceSubscriptionId,
   prismaFieldsForMissingStripeSubscription,
@@ -13,20 +15,33 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
-  const sig = (await headers()).get("stripe-signature");
+  const h = await headers();
+  const ip = getClientIpFromHeaders(h);
+  const flood = await enforceRateLimit(
+    "stripeIp",
+    `ip:${ip}`,
+    "Trop de requêtes webhook. Réessayez plus tard."
+  );
+  if (flood) return flood;
+
+  const sig = h.get("stripe-signature");
   if (!sig) return new NextResponse("Missing signature", { status: 400 });
 
   const rawBody = await req.text();
 
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(
+    event = getStripe().webhooks.constructEvent(
       rawBody,
       sig,
       process.env.STRIPE_WEBHOOK_SECRET!
     );
   } catch (err) {
-    console.error("Stripe signature verification failed:", err);
+    logger.error("stripe.webhook.signature_invalid", {
+      route: "/api/webhooks/stripe",
+      action: "constructEvent",
+      err,
+    });
     return new NextResponse("Invalid signature", { status: 400 });
   }
 
@@ -43,7 +58,7 @@ export async function POST(req: Request) {
             : s.subscription?.id;
 
         if (userId && subscriptionId && customerId) {
-          const sub = await stripe.subscriptions.retrieve(subscriptionId);
+          const sub = await getStripe().subscriptions.retrieve(subscriptionId);
           const fields = stripeSubscriptionToPrismaFields(sub);
 
           await prisma.subscription.upsert({
@@ -91,13 +106,17 @@ export async function POST(req: Request) {
         const subscriptionId = invoiceSubscriptionId(inv);
         if (subscriptionId) {
           try {
-            const sub = await stripe.subscriptions.retrieve(subscriptionId);
+            const sub = await getStripe().subscriptions.retrieve(subscriptionId);
             await prisma.subscription.updateMany({
               where: { stripeSubscriptionId: subscriptionId },
               data: stripeSubscriptionToPrismaFields(sub),
             });
           } catch (e) {
-            console.error("[stripe webhook] invoice.payment_failed", e);
+            logger.warn("stripe.webhook.invoice_payment_failed", {
+              route: "/api/webhooks/stripe",
+              action: "invoice.payment_failed",
+              err: e,
+            });
             if (
               e instanceof Stripe.errors.StripeInvalidRequestError &&
               e.code === "resource_missing"
@@ -116,7 +135,11 @@ export async function POST(req: Request) {
     }
     return NextResponse.json({ received: true });
   } catch (err) {
-    console.error("Webhook handler error:", err);
+    logger.error("stripe.webhook.handler_failed", {
+      route: "/api/webhooks/stripe",
+      action: "handler",
+      err,
+    });
     return new NextResponse("Webhook handler failed", { status: 500 });
   }
 }
