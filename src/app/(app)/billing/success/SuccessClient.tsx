@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { CheckCircle2, Sparkles, Users, BarChart3, Bot, Infinity as InfinityIcon, Key, FileBarChart, ArrowUpRight, Compass } from "lucide-react"
+import { CheckCircle2, Sparkles, Users, BarChart3, Bot, Infinity as InfinityIcon, Key, FileBarChart, Compass } from "lucide-react"
 
 type Plan = "PRO" | "AGENCY"
 

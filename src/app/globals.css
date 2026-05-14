@@ -400,6 +400,12 @@ body.cursor-down #cursor-ring {
   100% { background-position: -100% 0; }
 }
 
+/* Skeleton shimmer premium — GPU only */
+@keyframes postly-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 @keyframes fdotFloat {
   0%   { transform: translateY(110vh) scale(0); opacity: 0; }
   5%   { opacity: 1; transform: translateY(105vh) scale(1); }

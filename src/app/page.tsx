@@ -13,6 +13,7 @@ import LenisProvider from "@/components/cinematic/LenisProvider";
 import CustomCursor from "@/components/cinematic/CustomCursor";
 import LandingChatWidget from "@/components/landing/LandingChatWidget";
 import AerialCity from "@/components/landing/AerialCity";
+import { ArrowUpRight, ArrowRight, CalendarClock, Sparkles, LineChart } from "lucide-react";
 
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
@@ -185,93 +186,124 @@ function HeroSection() {
     }}>
       <motion.div style={{ position: "relative", zIndex: 2, maxWidth: 1200, margin: "0 auto", padding: "0 24px", width: "100%", y: yTitle, opacity: opacityHero, filter, willChange: "transform" }}>
         <motion.div
-          initial={{ opacity: 0, y: -16 }}
+          initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: EASE }}
+          transition={{ duration: 0.6, ease: EASE }}
           style={{
-            display: "inline-flex", alignItems: "center", gap: 8,
-            padding: "6px 16px", borderRadius: 100,
-            background: "rgba(124,92,252,0.12)",
-            border: "1px solid rgba(124,92,252,0.3)",
+            display: "inline-flex", alignItems: "center", gap: 10,
+            padding: "5px 12px 5px 10px", borderRadius: 100,
+            background: "rgba(180,200,255,0.04)",
+            border: "1px solid rgba(180,200,255,0.10)",
             backdropFilter: "blur(12px)",
             WebkitBackdropFilter: "blur(12px)",
-            fontSize: "0.8rem", fontWeight: 600, color: "var(--clr-primary-h)",
-            marginBottom: 32,
-            boxShadow: "0 0 30px rgba(124,92,252,0.15)",
+            fontSize: "0.78rem", fontWeight: 500,
+            color: "var(--text-2)",
+            letterSpacing: "0.01em",
+            marginBottom: 36,
           }}
         >
           <span style={{
             width: 6, height: 6, borderRadius: "50%",
-            background: "var(--clr-green)",
-            animation: "pulse 2s ease-in-out infinite",
+            background: "var(--success)",
+            animation: "pulse 2.4s ease-in-out infinite",
             display: "inline-block",
-            boxShadow: "0 0 8px var(--clr-green)",
+            boxShadow: "0 0 10px rgba(52,211,153,0.6), 0 0 0 3px rgba(52,211,153,0.08)",
           }} />
-          Nouveau — Analyse IA v2.0 disponible
+          <span style={{ color: "var(--text-1)" }}>Nouveau</span>
+          <span style={{ color: "var(--text-3)" }}>—</span>
+          <span>Assistant IA v2.0 disponible</span>
         </motion.div>
 
         <motion.h1
-          initial={{ opacity: 0, y: 24 }}
+          initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.1, ease: EASE }}
+          transition={{ duration: 0.85, delay: 0.08, ease: EASE }}
           style={{
-            fontSize: "clamp(3rem,7vw,6rem)",
-            fontWeight: 800,
-            letterSpacing: "-3px",
-            lineHeight: 1.05,
-            marginBottom: 24,
+            fontSize: "clamp(2.6rem, 6.8vw, 5.4rem)",
+            fontWeight: 600,
+            letterSpacing: "-0.04em",
+            lineHeight: 1.02,
+            marginBottom: 22,
+            color: "var(--text-1)",
           }}
         >
-          Publiez <span className="grad-text">partout.</span><br />
-          Grandissez <span className="grad-text">partout.</span>
+          La console de pilotage
+          <br />
+          <span style={{
+            background: "linear-gradient(180deg, #B4BCD0 0%, #7C8AA8 100%)",
+            WebkitBackgroundClip: "text",
+            backgroundClip: "text",
+            color: "transparent",
+            fontStyle: "italic",
+            fontWeight: 500,
+          }}>
+            de ta présence sociale
+          </span>
         </motion.h1>
 
         <motion.p
-          initial={{ opacity: 0, y: 24 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.2, ease: EASE }}
+          transition={{ duration: 0.7, delay: 0.18, ease: EASE }}
           style={{
-            fontSize: "clamp(1rem,2vw,1.25rem)",
-            color: "var(--clr-muted)",
-            maxWidth: 580, margin: "0 auto 44px",
-            lineHeight: 1.7,
+            fontSize: "clamp(1.02rem, 1.4vw, 1.18rem)",
+            color: "var(--text-3)",
+            maxWidth: 560, margin: "0 auto 40px",
+            lineHeight: 1.6,
+            letterSpacing: "-0.005em",
           }}
         >
-          Postly centralise tous vos réseaux sociaux. Planifiez, publiez et analysez
-          vos performances depuis un seul tableau de bord alimenté par l&apos;IA.
+          Planifie, publie et analyse tes contenus sur tous les réseaux depuis
+          un seul cockpit. Conçu pour les créateurs qui veulent piloter, pas bricoler.
         </motion.p>
 
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.3, ease: EASE }}
-          style={{ display: "flex", gap: 14, flexWrap: "wrap", justifyContent: "center", marginBottom: 96 }}
+          transition={{ duration: 0.6, delay: 0.28, ease: EASE }}
+          style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center", marginBottom: 80 }}
         >
           <MagneticLink
             href="/signup"
-            strength={20}
+            strength={16}
             style={{
-              padding: "14px 32px", borderRadius: 24,
-              fontSize: "1rem", fontWeight: 700, color: "#fff",
-              background: "linear-gradient(135deg,var(--clr-primary),#5B3EE8)",
-              boxShadow: "0 0 40px rgba(124,92,252,0.5), inset 0 1px 0 rgba(255,255,255,0.2)",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "13px 22px 13px 26px",
+              borderRadius: 12,
+              fontSize: "0.94rem",
+              fontWeight: 500,
+              color: "#fff",
+              background: "linear-gradient(180deg, #6366F1 0%, #4F46E5 100%)",
+              boxShadow: "0 1px 0 0 rgba(255,255,255,0.16) inset, 0 0 0 1px rgba(99,102,241,0.4), 0 8px 28px -8px rgba(79,70,229,0.5)",
+              letterSpacing: "-0.005em",
             }}
           >
-            ✦ Commencez gratuitement
+            Commencer gratuitement
+            <ArrowUpRight size={16} strokeWidth={2} style={{ marginTop: -1 }} />
           </MagneticLink>
           <MagneticLink
             href="#demo"
-            strength={14}
+            strength={10}
             style={{
-              padding: "14px 30px", borderRadius: 24,
-              fontSize: "1rem", fontWeight: 600, color: "var(--clr-text)",
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.12)",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "13px 22px",
+              borderRadius: 12,
+              fontSize: "0.94rem",
+              fontWeight: 500,
+              color: "var(--text-2)",
+              background: "rgba(180,200,255,0.03)",
+              border: "1px solid var(--line-2)",
               backdropFilter: "blur(12px)",
               WebkitBackdropFilter: "blur(12px)",
+              letterSpacing: "-0.005em",
             }}
           >
-            Voir la démo →
+            Voir la démo
+            <ArrowRight size={16} strokeWidth={1.75} />
           </MagneticLink>
         </motion.div>
 
@@ -290,19 +322,25 @@ function HeroSection() {
 function FeaturesSection() {
   const features = [
     {
-      icon: "🗓️", glow: "rgba(124,92,252,0.45)",
-      title: "Programmation Intelligente",
-      desc: "Planifiez vos publications à l'avance sur tous vos réseaux. Notre IA identifie les meilleurs moments pour maximiser votre visibilité et votre engagement.",
+      Icon: CalendarClock,
+      tint: "rgba(99,102,241,0.18)",
+      ring: "rgba(99,102,241,0.32)",
+      title: "Planification intelligente",
+      desc: "Programme tes publications à l'avance sur tous tes réseaux. L'IA identifie les meilleurs moments pour maximiser ta portée.",
     },
     {
-      icon: "🤖", glow: "rgba(34,211,160,0.45)",
-      title: "Assistance IA",
-      desc: "Générez des légendes percutantes, obtenez des suggestions de hashtags et analysez le ton de vos publications grâce à un assistant IA intégré.",
+      Icon: Sparkles,
+      tint: "rgba(6,182,212,0.16)",
+      ring: "rgba(6,182,212,0.30)",
+      title: "Assistant IA intégré",
+      desc: "Génère des légendes percutantes, suggestions de hashtags et analyse de ton — tout depuis ton cockpit, sans changer d'outil.",
     },
     {
-      icon: "📊", glow: "rgba(252,92,124,0.45)",
-      title: "Analytics Détaillés",
-      desc: "Suivez vos KPIs en temps réel, identifiez vos meilleurs contenus et prenez des décisions éclairées grâce à des rapports visuels et exportables.",
+      Icon: LineChart,
+      tint: "rgba(52,211,153,0.16)",
+      ring: "rgba(52,211,153,0.30)",
+      title: "Analytics détaillés",
+      desc: "Suivis temps réel, identification des meilleurs contenus et rapports visuels exportables. Prends des décisions basées sur la donnée.",
     },
   ];
 
@@ -325,36 +363,56 @@ function FeaturesSection() {
             gap: 24, marginTop: 60, perspective: 1400,
           }}
         >
-          {features.map((f) => (
-            <motion.article
-              key={f.title}
-              variants={{ hidden: { opacity: 0, y: 28 }, visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: EASE } } }}
-            >
-              <TiltCard
-                intensity={6}
-                style={{
-                  background: "linear-gradient(180deg, rgba(17,17,24,0.7), rgba(13,13,20,0.85))",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  borderRadius: 24,
-                  padding: "36px 30px",
-                  height: "100%",
-                  backdropFilter: "blur(14px)",
-                  WebkitBackdropFilter: "blur(14px)",
-                  boxShadow: "0 30px 60px -20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)",
-                }}
+          {features.map((f) => {
+            const Icon = f.Icon;
+            return (
+              <motion.article
+                key={f.title}
+                variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE } } }}
               >
-                <div style={{
-                  width: 56, height: 56, borderRadius: 14,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: "1.6rem", marginBottom: 24,
-                  background: `radial-gradient(circle, ${f.glow}, transparent 70%)`,
-                  boxShadow: `0 0 28px ${f.glow}`,
-                }}>{f.icon}</div>
-                <h3 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: 12 }}>{f.title}</h3>
-                <p style={{ color: "var(--clr-muted)", fontSize: "0.95rem", lineHeight: 1.7 }}>{f.desc}</p>
-              </TiltCard>
-            </motion.article>
-          ))}
+                <TiltCard
+                  intensity={4}
+                  style={{
+                    background: "linear-gradient(180deg, rgba(14,16,24,0.78), rgba(11,13,20,0.92))",
+                    border: "1px solid var(--line-2)",
+                    borderRadius: 20,
+                    padding: "32px 28px",
+                    height: "100%",
+                    backdropFilter: "blur(16px)",
+                    WebkitBackdropFilter: "blur(16px)",
+                    boxShadow:
+                      "0 1px 0 0 rgba(255,255,255,0.05) inset, " +
+                      "0 24px 48px -16px rgba(0,0,0,0.55), " +
+                      "0 8px 16px -8px rgba(0,0,0,0.4)",
+                  }}
+                >
+                  <div style={{
+                    width: 44, height: 44, borderRadius: 12,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    marginBottom: 22,
+                    background: f.tint,
+                    border: `1px solid ${f.ring}`,
+                    boxShadow: "0 1px 0 0 rgba(255,255,255,0.06) inset",
+                  }}>
+                    <Icon size={20} strokeWidth={1.5} color="var(--text-1)" />
+                  </div>
+                  <h3 style={{
+                    fontSize: "1.06rem",
+                    fontWeight: 600,
+                    marginBottom: 8,
+                    letterSpacing: "-0.015em",
+                    color: "var(--text-1)",
+                  }}>{f.title}</h3>
+                  <p style={{
+                    color: "var(--text-3)",
+                    fontSize: "0.92rem",
+                    lineHeight: 1.6,
+                    letterSpacing: "-0.003em",
+                  }}>{f.desc}</p>
+                </TiltCard>
+              </motion.article>
+            );
+          })}
         </motion.div>
       </div>
     </section>
@@ -626,7 +684,7 @@ function FooterSection() {
           color: "var(--clr-muted)", fontSize: "0.8rem", flexWrap: "wrap", gap: 12,
         }}>
           <span>© 2026 Postly SAS. Tous droits réservés.</span>
-          <span style={{ color: "var(--clr-primary-h)" }}>✦ Fait avec passion en France</span>
+          <span style={{ color: "var(--text-2)" }}>Fait à la main, en France.</span>
         </div>
       </div>
     </footer>

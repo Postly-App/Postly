@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import Logo from "@/components/Logo";
+import CommandPalette from "@/components/layout/CommandPalette";
 
 /* ── SVG Icons ──────────────────────────────────────────── */
 const DashIcon  = () => <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>;
@@ -211,28 +212,91 @@ export default function AppShell({ children, user }: Props) {
         {/* Topbar */}
         <div style={{
           position: "sticky", top: 0, zIndex: 10, height: 64,
-          borderBottom: "1px solid var(--clr-border)",
-          display: "flex", alignItems: "center", padding: "0 32px", gap: 16,
-          background: "rgba(10,10,15,0.85)", backdropFilter: "blur(20px)",
+          borderBottom: "1px solid var(--line-2)",
+          display: "flex", alignItems: "center", padding: "0 24px", gap: 12,
+          background: "rgba(11,13,20,0.78)",
+          backdropFilter: "blur(20px) saturate(180%)",
+          WebkitBackdropFilter: "blur(20px) saturate(180%)",
         }}>
+          {/* Search/Command trigger */}
+          <button
+            type="button"
+            onClick={() => {
+              // Déclenche l'événement clavier ⌘K pour ouvrir la palette
+              window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))
+            }}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "7px 10px 7px 12px",
+              borderRadius: 10,
+              background: "var(--surface-2)",
+              border: "1px solid var(--line-2)",
+              color: "var(--text-3)",
+              fontSize: "0.84rem",
+              fontFamily: "var(--font-sans)",
+              cursor: "pointer",
+              minWidth: 220,
+              transition: "all 160ms var(--ease-snap)",
+              letterSpacing: "-0.003em",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = "var(--line-3)"
+              e.currentTarget.style.color = "var(--text-2)"
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = "var(--line-2)"
+              e.currentTarget.style.color = "var(--text-3)"
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <circle cx="11" cy="11" r="7" />
+              <path d="m20 20-3.5-3.5" />
+            </svg>
+            <span style={{ flex: 1, textAlign: "left" }}>Chercher ou commande…</span>
+            <kbd
+              style={{
+                padding: "2px 6px",
+                fontSize: "0.66rem",
+                color: "var(--text-3)",
+                background: "var(--surface-3)",
+                border: "1px solid var(--line-2)",
+                borderRadius: 5,
+                fontFamily: "var(--font-mono)",
+                letterSpacing: "0.04em",
+                lineHeight: 1.4,
+              }}
+            >
+              ⌘K
+            </kbd>
+          </button>
+
           <div style={{ flex: 1 }} />
+
           <Link
             href="/compose"
             style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              padding: "8px 18px", borderRadius: 12,
-              background: "linear-gradient(135deg,#7C5CFC,#5B3EE8)",
-              color: "#fff", fontSize: "0.82rem", fontWeight: 700,
-              boxShadow: "0 0 16px rgba(124,92,252,0.35)",
-              transition: "var(--transition)", textDecoration: "none",
+              display: "inline-flex", alignItems: "center", gap: 6,
+              padding: "8px 16px 8px 14px", borderRadius: 10,
+              background: "linear-gradient(180deg, #6366F1 0%, #4F46E5 100%)",
+              color: "#fff", fontSize: "0.84rem", fontWeight: 500,
+              boxShadow: "0 1px 0 0 rgba(255,255,255,0.14) inset, 0 0 0 1px rgba(99,102,241,0.35), 0 6px 18px -6px rgba(79,70,229,0.45)",
+              textDecoration: "none",
+              letterSpacing: "-0.005em",
             }}
           >
-            ✏️ Nouveau post
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            Nouveau post
           </Link>
         </div>
 
         {children}
       </main>
+
+      <CommandPalette />
     </div>
   );
 }
