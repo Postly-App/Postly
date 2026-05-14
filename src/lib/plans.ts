@@ -24,10 +24,9 @@ export const PLANS = {
     features: [
       "15 comptes sociaux",
       "Posts illimités",
-      "Analytics avancés",
+      "Analytics avancés (90 jours, breakdown plateforme)",
       "Assistant IA complet",
       "Bibliothèque de médias 50 Go",
-      "Support prioritaire",
     ],
   },
   agency: {
@@ -42,8 +41,8 @@ export const PLANS = {
       "Gestion multi-clients",
       "5 membres d'équipe",
       "Rapports en marque blanche",
-      "API complète",
-      "Account manager dédié",
+      "API REST complète",
+      "Stockage 500 Go",
     ],
   },
 } as const;

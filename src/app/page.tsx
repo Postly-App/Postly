@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Logo from "@/components/Logo";
 import { motion, useScroll, useSpring, useTransform } from "framer-motion";
 import MagneticLink from "@/components/cinematic/MagneticLink";
@@ -29,9 +29,22 @@ const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 /* ═══════════════════════════════════════════════════════════
    ROOT
 ═══════════════════════════════════════════════════════════ */
+function useIsDesktop(): boolean {
+  const [isDesktop, setIsDesktop] = useState(false);
+  useEffect(() => {
+    const m = window.matchMedia("(min-width: 1024px) and (prefers-reduced-motion: no-preference)");
+    setIsDesktop(m.matches);
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    m.addEventListener("change", handler);
+    return () => m.removeEventListener("change", handler);
+  }, []);
+  return isDesktop;
+}
+
 export default function HomePage() {
   useScrollProgress();
   useScrollReveal();
+  const isDesktop = useIsDesktop();
 
   return (
     <LenisProvider>
@@ -39,11 +52,22 @@ export default function HomePage() {
       <div className="relative min-h-screen overflow-x-hidden" style={{ color: "var(--clr-text)" }}>
       <BootSplash />
 
-      {/* Cinematic 3D city behind everything */}
-      <CityScene />
+      {/* Cinematic 3D city — desktop only, tue les perfs mobile (~300kb JS) */}
+      {isDesktop && <CityScene />}
 
-      {/* Glass / rain overlay above scene */}
-      <WindowFrame />
+      {/* Glass / rain overlay above scene — idem */}
+      {isDesktop && <WindowFrame />}
+
+      {/* Fallback gradient pour mobile (remplace la 3D) */}
+      {!isDesktop && (
+        <div aria-hidden="true" style={{
+          position: "fixed", inset: 0, zIndex: 1, pointerEvents: "none",
+          background:
+            "radial-gradient(circle at 50% 0%, rgba(124,92,252,0.25), transparent 60%), " +
+            "radial-gradient(circle at 100% 100%, rgba(240,98,146,0.15), transparent 50%), " +
+            "linear-gradient(180deg, #0A0A0F 0%, #050507 100%)",
+        }} />
+      )}
 
       {/* Foreground gradient overlay to keep content readable over the scene */}
       <div aria-hidden="true" style={{

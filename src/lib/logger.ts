@@ -2,6 +2,7 @@
  * Journalisation structurée backend (Vercel / serverless / Edge-safe).
  * Prêt pour agrégation (Sentry, Axiom, Datadog) : une ligne JSON par événement en prod.
  */
+import { captureException, captureMessage } from "@/lib/sentry"
 
 export function isProduction(): boolean {
   return process.env.NODE_ENV === "production"
@@ -185,6 +186,18 @@ export const logger = {
       merged.error = toLoggableError(err) as unknown
     }
     emit("error", msg, merged)
+    // Forward to Sentry si SENTRY_DSN est défini (no-op sinon)
+    if (err !== undefined) {
+      captureException(err, {
+        level: "error",
+        tags: {
+          route: typeof rest.route === "string" ? rest.route : "unknown",
+        },
+        extra: { msg, ...rest },
+      })
+    } else {
+      captureMessage(msg, { level: "error", extra: rest })
+    }
   },
   /** Événements traçabilité / sécurité (niveau dédié pour filtres downstream). */
   audit(msg: string, context?: LogContext): void {
