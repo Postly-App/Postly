@@ -10,6 +10,7 @@ import {
   INVITATION_TTL_MS,
 } from "@/lib/team"
 import { logger } from "@/lib/logger"
+import { sendTeamInvitationEmail } from "@/lib/client"
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -25,7 +26,7 @@ export async function POST(
 
   const team = await prisma.team.findUnique({
     where: { id: teamId },
-    select: { ownerId: true },
+    select: { ownerId: true, name: true },
   })
   if (!team) {
     return NextResponse.json({ error: "Équipe introuvable." }, { status: 404 })
@@ -99,12 +100,22 @@ export async function POST(
   })
 
   const baseUrl = process.env.NEXTAUTH_URL ?? ""
+  const inviteUrl = `${baseUrl}/invitations/${token}`
+
+  // Envoi email best-effort (n'échoue jamais l'API)
+  sendTeamInvitationEmail(invitation.email, {
+    teamName: team.name,
+    inviterName: session.user.name ?? null,
+    inviteUrl,
+    role: inviteRole,
+  }).catch(() => {})
+
   return NextResponse.json({
     id: invitation.id,
     email: invitation.email,
     role: invitation.role,
     expiresAt: invitation.expiresAt,
-    inviteUrl: `${baseUrl}/invitations/${token}`,
+    inviteUrl,
   })
 }
 

@@ -10,6 +10,11 @@ import {
   invoiceSubscriptionId,
   prismaFieldsForMissingStripeSubscription,
 } from "@/lib/stripe";
+import {
+  sendPaymentSuccessEmail,
+  sendPaymentFailedEmail,
+  sendSubscriptionCanceledEmail,
+} from "@/lib/client";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -73,6 +78,15 @@ export async function POST(req: Request) {
               stripeCustomerId: customerId,
             },
           });
+
+          // Email de bienvenue PRO/AGENCY
+          const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { email: true },
+          });
+          if (user?.email) {
+            sendPaymentSuccessEmail(user.email, fields.plan).catch(() => {});
+          }
         }
         break;
       }
@@ -94,10 +108,19 @@ export async function POST(req: Request) {
           planOverride: "FREE",
         });
 
+        const subRecord = await prisma.subscription.findFirst({
+          where: { stripeSubscriptionId: sub.id },
+          include: { user: { select: { email: true } } },
+        });
+
         await prisma.subscription.updateMany({
           where: { stripeSubscriptionId: sub.id },
           data: fields,
         });
+
+        if (subRecord?.user.email) {
+          sendSubscriptionCanceledEmail(subRecord.user.email).catch(() => {});
+        }
         break;
       }
 
@@ -111,6 +134,14 @@ export async function POST(req: Request) {
               where: { stripeSubscriptionId: subscriptionId },
               data: stripeSubscriptionToPrismaFields(sub),
             });
+
+            const subRecord = await prisma.subscription.findFirst({
+              where: { stripeSubscriptionId: subscriptionId },
+              include: { user: { select: { email: true } } },
+            });
+            if (subRecord?.user.email) {
+              sendPaymentFailedEmail(subRecord.user.email).catch(() => {});
+            }
           } catch (e) {
             logger.warn("stripe.webhook.invoice_payment_failed", {
               route: "/api/webhooks/stripe",

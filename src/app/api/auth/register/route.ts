@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 import { enforceRateLimit, getClientIp } from "@/lib/ratelimit"
 import { logger } from "@/lib/logger"
+import { sendWelcomeEmail } from "@/lib/client"
 
 export async function POST(req: Request) {
   const ip = getClientIp(req)
@@ -63,6 +64,9 @@ export async function POST(req: Request) {
         stripePriceId: "free",
       },
     })
+
+    // Email de bienvenue (best-effort, ne bloque pas la création)
+    sendWelcomeEmail(user.email, user.name).catch(() => {})
 
     return NextResponse.json({ success: true })
   } catch (error) {
