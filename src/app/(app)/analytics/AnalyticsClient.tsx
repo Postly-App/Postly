@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Lock } from "lucide-react";
+import { Lock, BarChart3 } from "lucide-react";
 import SocialIcon from "@/components/SocialIcon";
 
 type Row = {
@@ -175,7 +175,16 @@ export default function AnalyticsClient({ rows, publishedCount, advanced }: Prop
           background: "var(--clr-card)", border: "1px dashed var(--clr-border)",
           borderRadius: 16, padding: "60px 32px", textAlign: "center",
         }}>
-          <div style={{ fontSize: "2.4rem", marginBottom: 14 }}>📊</div>
+          <div style={{
+            width: 56, height: 56, borderRadius: 16,
+            background: "linear-gradient(180deg, rgba(180,200,255,0.05), rgba(180,200,255,0.02))",
+            border: "1px solid var(--line-2)",
+            display: "inline-flex",
+            alignItems: "center", justifyContent: "center",
+            marginBottom: 14,
+          }}>
+            <BarChart3 size={24} strokeWidth={1.5} color="var(--text-3)" />
+          </div>
           <h2 style={{ fontSize: "1.1rem", fontWeight: 700, marginBottom: 8 }}>
             Pas encore d&apos;analytics à afficher
           </h2>

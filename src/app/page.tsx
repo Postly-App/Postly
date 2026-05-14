@@ -1,6 +1,5 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import Logo from "@/components/Logo";
@@ -13,16 +12,7 @@ import BootSplash from "@/components/cinematic/BootSplash";
 import LenisProvider from "@/components/cinematic/LenisProvider";
 import CustomCursor from "@/components/cinematic/CustomCursor";
 import LandingChatWidget from "@/components/landing/LandingChatWidget";
-
-const CityScene = dynamic(() => import("@/components/cinematic/CityScene"), {
-  ssr: false,
-  loading: () => null,
-});
-
-const WindowFrame = dynamic(() => import("@/components/cinematic/WindowFrame"), {
-  ssr: false,
-  loading: () => null,
-});
+import AerialCity from "@/components/landing/AerialCity";
 
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
@@ -52,28 +42,15 @@ export default function HomePage() {
       <div className="relative min-h-screen overflow-x-hidden" style={{ color: "var(--clr-text)" }}>
       <BootSplash />
 
-      {/* Cinematic 3D city — desktop only, tue les perfs mobile (~300kb JS) */}
-      {isDesktop && <CityScene />}
+      {/* Vue aérienne nocturne — desktop full, mobile densité réduite */}
+      <AerialCity density={isDesktop ? "high" : "medium"} />
 
-      {/* Glass / rain overlay above scene — idem */}
-      {isDesktop && <WindowFrame />}
-
-      {/* Fallback gradient pour mobile (remplace la 3D) */}
-      {!isDesktop && (
-        <div aria-hidden="true" style={{
-          position: "fixed", inset: 0, zIndex: 1, pointerEvents: "none",
-          background:
-            "radial-gradient(circle at 50% 0%, rgba(124,92,252,0.25), transparent 60%), " +
-            "radial-gradient(circle at 100% 100%, rgba(240,98,146,0.15), transparent 50%), " +
-            "linear-gradient(180deg, #0A0A0F 0%, #050507 100%)",
-        }} />
-      )}
-
-      {/* Foreground gradient overlay to keep content readable over the scene */}
+      {/* Overlay lisibilité contenu — léger gradient froid */}
       <div aria-hidden="true" style={{
         position: "fixed", inset: 0, zIndex: 2, pointerEvents: "none",
         background:
-          "radial-gradient(circle at 50% 20%, rgba(124,92,252,0.10), transparent 55%), linear-gradient(180deg, rgba(5,5,9,0.35) 0%, rgba(5,5,9,0.55) 55%, rgba(5,5,9,0.92) 100%)",
+          "radial-gradient(ellipse 80% 50% at 50% 20%, rgba(99,102,241,0.06), transparent 60%)," +
+          "linear-gradient(180deg, rgba(3,5,11,0.20) 0%, rgba(3,5,11,0.45) 60%, rgba(3,5,11,0.85) 100%)",
       }} />
 
       <div id="scroll-progress" aria-hidden="true" />

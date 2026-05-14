@@ -4,6 +4,7 @@ import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import { getActiveTeamForUser, getUserTeamRole, TEAM_ROLE_LABELS } from "@/lib/team"
 import { getUserActivePlan, PLAN_LIMITS } from "@/lib/plan-limits"
+import { Building2 } from "lucide-react"
 import TeamClient from "./TeamClient"
 import NoTeamClient from "./NoTeamClient"
 
@@ -76,12 +77,14 @@ function UpgradeNotice() {
   return (
     <div style={{ padding: 60, maxWidth: 640, margin: "0 auto", textAlign: "center" }}>
       <div style={{
-        width: 64, height: 64, borderRadius: "50%",
-        background: "rgba(34,211,160,0.15)", display: "inline-flex",
+        width: 64, height: 64, borderRadius: 18,
+        background: "linear-gradient(180deg, rgba(52,211,153,0.10), rgba(52,211,153,0.04))",
+        border: "1px solid rgba(52,211,153,0.20)",
+        display: "inline-flex",
         alignItems: "center", justifyContent: "center", marginBottom: 20,
-        fontSize: 28,
+        boxShadow: "0 1px 0 0 rgba(255,255,255,0.04) inset, 0 12px 32px -8px rgba(52,211,153,0.20)",
       }}>
-        🏢
+        <Building2 size={26} strokeWidth={1.5} color="#34D399" />
       </div>
       <h1 style={{ fontSize: "1.5rem", fontWeight: 800, marginBottom: 12 }}>
         Équipe et clients — plan Agence

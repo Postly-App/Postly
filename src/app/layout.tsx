@@ -1,18 +1,28 @@
-import type { Metadata } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 import Providers from "./providers";
 
-const plusJakarta = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
-  variable: "--font-plus-jakarta",
-  display: "swap",
-});
-
 export const metadata: Metadata = {
-  title: "Postly — Publiez partout. Grandissez partout.",
-  description: "La plateforme tout-en-un pour planifier, publier et analyser vos contenus sur tous les réseaux sociaux. Propulsée par l'IA.",
+  title: "Postly — Mission control pour ta présence sociale",
+  description:
+    "La console de pilotage qui planifie, publie et analyse tes contenus sur tous les réseaux sociaux. Propulsée par l'IA.",
+  applicationName: "Postly",
+  authors: [{ name: "Postly" }],
+  metadataBase: new URL("https://www.getpostly.space"),
+  openGraph: {
+    title: "Postly",
+    description: "Mission control pour ta présence sociale.",
+    type: "website",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#06070B",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -21,7 +31,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="fr" className={plusJakarta.variable}>
+    <html lang="fr" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <body>
         <Providers>{children}</Providers>
       </body>

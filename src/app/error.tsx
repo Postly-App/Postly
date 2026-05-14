@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
+import { AlertTriangle } from "lucide-react";
 import { logger } from "@/lib/logger";
 
 export default function Error({
@@ -34,14 +35,14 @@ export default function Error({
           width: 72,
           height: 72,
           borderRadius: "50%",
-          background: "rgba(252,92,124,0.15)",
+          background: "rgba(244,63,94,0.10)",
+          border: "1px solid rgba(244,63,94,0.25)",
           display: "inline-flex",
           alignItems: "center",
           justifyContent: "center",
           marginBottom: 20,
-          fontSize: "2rem",
         }}>
-          ⚠️
+          <AlertTriangle size={32} strokeWidth={1.5} color="#F43F5E" />
         </div>
         <h1 style={{ fontSize: "1.5rem", fontWeight: 800, marginBottom: 10 }}>
           Une erreur inattendue est survenue

@@ -1,54 +1,138 @@
 @import "tailwindcss";
 
 /* ═══════════════════════════════════════════════════════════
-   CSS CUSTOM PROPERTIES
-═══════════════════════════════════════════════════════════ */
+   POSTLY — DESIGN TOKENS v2 "Mission Control"
+   Palette: deep indigo (signal) + electric cyan (radar accent)
+   ═══════════════════════════════════════════════════════════ */
 :root {
-  --clr-bg:        #0A0A0F;
-  --clr-card:      #111118;
-  --clr-card2:     #16161F;
-  --clr-border:    rgba(255,255,255,0.08);
-  --clr-border2:   rgba(255,255,255,0.12);
-  --clr-primary:   #7C5CFC;
-  --clr-primary-h: #9B82FD;
-  --clr-text:      #F1F0FF;
-  --clr-muted:     #9B99B5;
-  --clr-green:     #22D3A0;
-  --clr-danger:    #FC5C7C;
-  --clr-pink:      #F06292;
-  --clr-blue:      #4FA3FF;
-  --clr-amber:     #FFBB33;
+  /* — Surfaces (bleu-noir nocturne, pas gris carbone) — */
+  --surface-0:     #06070B;  /* outer space */
+  --surface-1:     #0B0D14;  /* page bg */
+  --surface-2:     #0E1018;  /* card */
+  --surface-3:     #161824;  /* elevated card */
+  --surface-4:     #1F2235;  /* tooltip / popover */
 
-  --radius-sm:  10px;
-  --radius-md:  16px;
-  --radius-lg:  24px;
+  /* — Borders (légèrement bleutées : lumière nocturne sur le métal) — */
+  --line-1:        rgba(180, 200, 255, 0.06);
+  --line-2:        rgba(180, 200, 255, 0.10);
+  --line-3:        rgba(180, 200, 255, 0.16);
 
-  --shadow-card:    0 4px 32px rgba(0,0,0,0.45);
-  --shadow-glow:    0 0 30px rgba(124,92,252,0.35);
-  --shadow-glow-lg: 0 0 60px rgba(124,92,252,0.25);
+  /* — Text — */
+  --text-1:        #F4F4F8;
+  --text-2:        #B4BCD0;
+  --text-3:        #7C8AA8;
+  --text-4:        #4E5972;
 
-  --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
-  --font: var(--font-plus-jakarta), 'Plus Jakarta Sans', system-ui, sans-serif;
+  /* — Brand : indigo profond (mature) + cyan radar (signal) — */
+  --brand-50:      #EEF2FF;
+  --brand-100:     #E0E7FF;
+  --brand-300:     #818CF8;
+  --brand-500:     #6366F1;   /* primary */
+  --brand-600:     #4F46E5;   /* primary-h */
+  --brand-700:     #4338CA;
+  --accent-cyan:   #06B6D4;
+  --accent-cyan-h: #22D3EE;
 
-  /* Tailwind compat aliases */
-  --brand:       #7c5cfc;
-  --brand-light: #9b82fd;
-  --brand-dark:  #5b3edb;
-  --brand-glow:  rgba(124,92,252,0.25);
-  --bg:          #0a0a0f;
-  --bg2:         #111118;
-  --bg3:         #18181f;
-  --border:      rgba(255,255,255,0.08);
-  --border-hover:rgba(124,92,252,0.4);
-  --text:        #f1f0ff;
-  --text2:       #9b99b5;
-  --text3:       #5c5a75;
-  --green:       #22d3a0;
-  --blue:        #4fa3ff;
-  --pink:        #f06292;
-  --amber:       #ffbb33;
-  --radius:      12px;
-  --radius-xl:   24px;
+  /* — Etats sémantiques — */
+  --success:       #34D399;
+  --warning:       #FBBF24;
+  --danger:        #F43F5E;
+  --info:          #60A5FA;
+
+  /* — Élévation multi-layered (Linear-style) — */
+  --elev-1:
+    0 1px 0 0 rgba(255,255,255,0.04) inset,
+    0 1px 2px 0 rgba(0,0,0,0.5);
+  --elev-2:
+    0 1px 0 0 rgba(255,255,255,0.05) inset,
+    0 4px 8px -2px rgba(0,0,0,0.55),
+    0 12px 24px -8px rgba(0,0,0,0.45);
+  --elev-3:
+    0 1px 0 0 rgba(255,255,255,0.06) inset,
+    0 8px 16px -4px rgba(0,0,0,0.65),
+    0 24px 48px -12px rgba(0,0,0,0.55);
+
+  /* — Halos brand (parcimonieux, pas systématique) — */
+  --glow-brand:    0 0 0 1px rgba(99,102,241,0.15),
+                   0 8px 32px -8px rgba(99,102,241,0.45);
+  --glow-cyan:     0 0 0 1px rgba(6,182,212,0.18),
+                   0 8px 32px -8px rgba(6,182,212,0.4);
+
+  /* — Radius (échelle stricte 4→8→12→16→24→32) — */
+  --radius-xs:  4px;
+  --radius-sm:  8px;
+  --radius-md:  12px;
+  --radius-lg:  16px;
+  --radius-xl:  24px;
+  --radius-2xl: 32px;
+
+  /* — Courbes d'animation (calibrées Apple/Linear/Framer) — */
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);     /* entrées doux */
+  --ease-out-expo:  cubic-bezier(0.22, 1, 0.36, 1);    /* arrivées rapides */
+  --ease-spring:    cubic-bezier(0.32, 0.72, 0, 1);    /* Apple touch */
+  --ease-snap:      cubic-bezier(0.16, 1, 0.3, 1);     /* snappy UI */
+  --ease-inout:     cubic-bezier(0.45, 0, 0.55, 1);    /* hover continuous */
+
+  /* — Durées — */
+  --dur-1:  120ms;
+  --dur-2:  220ms;
+  --dur-3:  360ms;
+  --dur-4:  560ms;
+  --dur-5:  900ms;
+
+  /* — Typo — */
+  --font-sans: var(--font-geist-sans), 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: var(--font-geist-mono), 'Geist Mono', 'SF Mono', 'JetBrains Mono', monospace;
+  --font-display: var(--font-geist-sans), 'Geist', -apple-system, sans-serif;
+
+  /* — Echelles tailwind v4 — */
+  --color-brand:        var(--brand-500);
+  --color-brand-hover:  var(--brand-600);
+  --color-accent:       var(--accent-cyan);
+
+  /* ════════════════════════════════════════════════
+     COMPAT — alias des anciens tokens pour migration progressive
+     (à supprimer une fois que tous les fichiers utilisent les nouveaux)
+     ════════════════════════════════════════════════ */
+  --clr-bg:        var(--surface-1);
+  --clr-card:      var(--surface-2);
+  --clr-card2:     var(--surface-3);
+  --clr-border:    var(--line-1);
+  --clr-border2:   var(--line-2);
+  --clr-primary:   var(--brand-500);
+  --clr-primary-h: var(--brand-300);
+  --clr-text:      var(--text-1);
+  --clr-muted:     var(--text-3);
+  --clr-green:     var(--success);
+  --clr-danger:    var(--danger);
+  --clr-pink:      var(--accent-cyan);
+  --clr-blue:      var(--info);
+  --clr-amber:     var(--warning);
+
+  --shadow-card:    var(--elev-2);
+  --shadow-glow:    var(--glow-brand);
+  --shadow-glow-lg: 0 0 0 1px rgba(99,102,241,0.1), 0 16px 48px -12px rgba(99,102,241,0.4);
+
+  --transition: all var(--dur-2) var(--ease-out-quart);
+  --font: var(--font-sans);
+
+  --brand:       var(--brand-500);
+  --brand-light: var(--brand-300);
+  --brand-dark:  var(--brand-700);
+  --brand-glow:  rgba(99,102,241,0.18);
+  --bg:          var(--surface-1);
+  --bg2:         var(--surface-2);
+  --bg3:         var(--surface-3);
+  --border:      var(--line-1);
+  --border-hover:rgba(99,102,241,0.32);
+  --text:        var(--text-1);
+  --text2:       var(--text-3);
+  --text3:       var(--text-4);
+  --green:       var(--success);
+  --blue:        var(--info);
+  --pink:        var(--accent-cyan);
+  --amber:       var(--warning);
+  --radius:      var(--radius-md);
 }
 
 /* ═══════════════════════════════════════════════════════════

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { Users } from "lucide-react"
 import { toast } from "sonner"
 
 export default function NoTeamClient() {
@@ -41,12 +42,14 @@ export default function NoTeamClient() {
         textAlign: "center",
       }}>
         <div style={{
-          width: 64, height: 64, borderRadius: "50%",
-          background: "rgba(124,92,252,0.15)", display: "inline-flex",
+          width: 64, height: 64, borderRadius: 18,
+          background: "linear-gradient(180deg, rgba(99,102,241,0.12), rgba(99,102,241,0.04))",
+          border: "1px solid rgba(99,102,241,0.22)",
+          display: "inline-flex",
           alignItems: "center", justifyContent: "center", marginBottom: 20,
-          fontSize: 28,
+          boxShadow: "0 1px 0 0 rgba(255,255,255,0.05) inset, 0 12px 32px -8px rgba(99,102,241,0.30)",
         }}>
-          👥
+          <Users size={26} strokeWidth={1.5} color="#818CF8" />
         </div>
         <h1 style={{ fontSize: "1.4rem", fontWeight: 800, marginBottom: 10 }}>
           Crée ton équipe

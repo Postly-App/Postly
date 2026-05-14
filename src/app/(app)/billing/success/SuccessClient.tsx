@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { CheckCircle2, Sparkles, Users, BarChart3, Bot, Infinity as InfinityIcon, Key, FileBarChart } from "lucide-react"
+import { CheckCircle2, Sparkles, Users, BarChart3, Bot, Infinity as InfinityIcon, Key, FileBarChart, ArrowUpRight, Compass } from "lucide-react"
 
 type Plan = "PRO" | "AGENCY"
 
@@ -208,15 +208,34 @@ export default function SuccessClient({ plan, userName }: { plan: Plan; userName
 
       <div style={{
         marginTop: 40,
-        padding: 20,
-        background: "var(--clr-card)",
-        border: "1px solid var(--clr-border)",
+        padding: "16px 20px",
+        background: "var(--surface-2)",
+        border: "1px solid var(--line-1)",
         borderRadius: 14,
-        textAlign: "center",
+        display: "flex",
+        alignItems: "center",
+        gap: 14,
       }}>
-        <p style={{ fontSize: "0.85rem", color: "var(--clr-muted)", margin: 0 }}>
-          💡 <strong style={{ color: "var(--clr-text)" }}>Étape suivante recommandée :</strong>{" "}
-          <Link href="/settings?tab=Comptes" style={{ color: accent, fontWeight: 600 }}>
+        <div style={{
+          width: 36, height: 36, borderRadius: 10,
+          background: `${accent}14`,
+          border: `1px solid ${accent}33`,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          flexShrink: 0,
+        }}>
+          <Compass size={18} strokeWidth={1.75} color={accent} />
+        </div>
+        <p style={{ fontSize: "0.86rem", color: "var(--text-3)", margin: 0, lineHeight: 1.55 }}>
+          <strong style={{ color: "var(--text-1)", fontWeight: 600 }}>Étape suivante</strong>{" — "}
+          <Link
+            href="/settings?tab=Comptes"
+            style={{
+              color: accent,
+              fontWeight: 500,
+              borderBottom: `1px solid ${accent}55`,
+              paddingBottom: 1,
+            }}
+          >
             connecte ton premier compte social
           </Link>{" "}
           pour publier en moins de 2 minutes.

@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { Plus, Trash2, Edit2 } from "lucide-react"
+import { Plus, Trash2, Edit2, Building2 } from "lucide-react"
 
 type ClientRow = {
   id: string
@@ -165,14 +165,23 @@ export default function ClientsPage({ teamName, canManage, clients }: Props) {
       {clients.length === 0 ? (
         <div style={{
           textAlign: "center",
-          padding: 60,
-          background: "var(--clr-card)",
-          border: "1px dashed var(--clr-border)",
-          borderRadius: 16,
+          padding: "60px 32px",
+          background: "var(--surface-2)",
+          border: "1px dashed var(--line-2)",
+          borderRadius: 20,
         }}>
-          <div style={{ fontSize: "2.5rem", marginBottom: 12 }}>🏢</div>
-          <h2 style={{ fontSize: "1.1rem", fontWeight: 700, marginBottom: 8 }}>Aucun client pour l&apos;instant</h2>
-          <p style={{ color: "var(--clr-muted)", fontSize: "0.9rem", maxWidth: 380, margin: "0 auto" }}>
+          <div style={{
+            width: 56, height: 56, borderRadius: 16,
+            background: "linear-gradient(180deg, rgba(180,200,255,0.05), rgba(180,200,255,0.02))",
+            border: "1px solid var(--line-2)",
+            display: "inline-flex",
+            alignItems: "center", justifyContent: "center",
+            marginBottom: 16,
+          }}>
+            <Building2 size={24} strokeWidth={1.5} color="var(--text-3)" />
+          </div>
+          <h2 style={{ fontSize: "1.05rem", fontWeight: 600, marginBottom: 6, letterSpacing: "-0.01em" }}>Aucun client pour l&apos;instant</h2>
+          <p style={{ color: "var(--text-3)", fontSize: "0.88rem", maxWidth: 380, margin: "0 auto", lineHeight: 1.55 }}>
             Crée ton premier client pour organiser tes posts, comptes sociaux et rapports
             par marque.
           </p>
