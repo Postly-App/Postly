@@ -9,16 +9,30 @@ export const PLAN_LIMITS = {
   FREE: {
     maxSocialAccounts: 3,
     maxScheduledPostsPerMonth: 10,
+    aiAssistant: false,
+    advancedAnalytics: false,
   },
   PRO: {
     maxSocialAccounts: 15,
     maxScheduledPostsPerMonth: Infinity,
+    aiAssistant: true,
+    advancedAnalytics: true,
   },
   AGENCY: {
     maxSocialAccounts: Infinity,
     maxScheduledPostsPerMonth: Infinity,
+    aiAssistant: true,
+    advancedAnalytics: true,
   },
-} as const satisfies Record<Plan, { maxSocialAccounts: number; maxScheduledPostsPerMonth: number }>
+} as const satisfies Record<
+  Plan,
+  {
+    maxSocialAccounts: number
+    maxScheduledPostsPerMonth: number
+    aiAssistant: boolean
+    advancedAnalytics: boolean
+  }
+>
 
 export type PlanLimits = (typeof PLAN_LIMITS)[Plan]
 
@@ -59,6 +73,48 @@ export async function checkCanAddSocialAccount(
       reason: `Plan ${plan} : ${limit} comptes sociaux maximum. Passez au plan supérieur pour en connecter davantage.`,
       limit,
       current,
+      plan,
+    }
+  }
+  return { allowed: true }
+}
+
+/**
+ * Vérifie si l'utilisateur a accès à l'assistant IA dashboard (PRO + AGENCY).
+ */
+export async function checkCanUseAi(
+  userId: string,
+  options?: { plan?: Plan }
+): Promise<PlanCheckResult> {
+  const plan = options?.plan ?? (await getUserActivePlan(userId))
+  if (!PLAN_LIMITS[plan].aiAssistant) {
+    return {
+      allowed: false,
+      reason:
+        "L'assistant IA est réservé aux plans Pro et Agence. Passe au plan supérieur pour l'activer.",
+      limit: 0,
+      current: 0,
+      plan,
+    }
+  }
+  return { allowed: true }
+}
+
+/**
+ * Vérifie si l'utilisateur a accès aux analytics avancés (PRO + AGENCY).
+ */
+export async function checkCanUseAdvancedAnalytics(
+  userId: string,
+  options?: { plan?: Plan }
+): Promise<PlanCheckResult> {
+  const plan = options?.plan ?? (await getUserActivePlan(userId))
+  if (!PLAN_LIMITS[plan].advancedAnalytics) {
+    return {
+      allowed: false,
+      reason:
+        "Les analytics avancés sont réservés aux plans Pro et Agence.",
+      limit: 0,
+      current: 0,
       plan,
     }
   }

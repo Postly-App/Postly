@@ -64,9 +64,10 @@ interface Props {
   }>;
   user: { name?: string | null; email?: string | null; image?: string | null };
   aiChatEnabled: boolean;
+  plan: "FREE" | "PRO" | "AGENCY";
 }
 
-export default function DashboardClient({ analytics, recentPosts, connectedAccounts, user, aiChatEnabled }: Props) {
+export default function DashboardClient({ analytics, recentPosts, connectedAccounts, user, aiChatEnabled, plan }: Props) {
   const firstName = user.name?.split(" ")[0] ?? "toi";
   const hour      = new Date().getHours();
   const greeting  = hour < 12 ? "Bonjour" : hour < 17 ? "Bon après-midi" : "Bonsoir";
@@ -315,7 +316,7 @@ export default function DashboardClient({ analytics, recentPosts, connectedAccou
         )}
       </div>
 
-      <ChatAssistant enabled={aiChatEnabled} />
+      <ChatAssistant enabled={aiChatEnabled} plan={plan} />
     </div>
   );
 }

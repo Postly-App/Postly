@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { MessageCircle, Send, X } from "lucide-react";
+import Link from "next/link";
+import { MessageCircle, Send, X, Lock } from "lucide-react";
 import { toast } from "sonner";
 
 type Role = "user" | "assistant";
@@ -14,9 +15,11 @@ interface Msg {
 interface Props {
   /** Si false, l’API renverra 503 : on affiche un bandeau sans bloquer l’UI. */
   enabled: boolean;
+  plan?: "FREE" | "PRO" | "AGENCY";
 }
 
-export default function ChatAssistant({ enabled }: Props) {
+export default function ChatAssistant({ enabled, plan = "FREE" }: Props) {
+  const isLocked = plan === "FREE";
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -211,7 +214,56 @@ export default function ChatAssistant({ enabled }: Props) {
           </div>
 
           <div style={{ flex: 1, overflowY: "auto", padding: 14, display: "flex", flexDirection: "column", gap: 10 }}>
-            {messages.length === 0 && (
+            {isLocked && (
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  textAlign: "center",
+                  gap: 12,
+                  padding: "24px 12px",
+                }}
+              >
+                <div
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: "50%",
+                    background: "rgba(124,92,252,0.15)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Lock size={22} color="#9B82FD" />
+                </div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: "0.95rem", color: "var(--clr-text)" }}>
+                    Assistant IA réservé au plan Pro
+                  </div>
+                  <p style={{ fontSize: "0.82rem", color: "var(--clr-muted)", lineHeight: 1.5, marginTop: 6 }}>
+                    Génère des idées, rédige des posts adaptés à chaque plateforme et reçois des recommandations
+                    basées sur tes performances.
+                  </p>
+                </div>
+                <Link
+                  href="/billing"
+                  style={{
+                    background: "linear-gradient(135deg,#7C5CFC,#9B82FD)",
+                    color: "#fff",
+                    padding: "10px 18px",
+                    borderRadius: 10,
+                    fontSize: "0.85rem",
+                    fontWeight: 600,
+                    textDecoration: "none",
+                  }}
+                >
+                  Passer au plan Pro
+                </Link>
+              </div>
+            )}
+            {!isLocked && messages.length === 0 && (
               <p style={{ fontSize: "0.82rem", color: "var(--clr-muted)", lineHeight: 1.5, margin: 0 }}>
                 Pose une question sur tes posts, demande des idées de contenu ou un coup de main pour rédiger.
                 Ton plan, tes réseaux connectés et tes derniers posts sont pris en compte côté serveur (sans exposer
@@ -244,8 +296,8 @@ export default function ChatAssistant({ enabled }: Props) {
             <textarea
               rows={2}
               value={input}
-              disabled={loading}
-              placeholder="Écris ton message…"
+              disabled={loading || isLocked}
+              placeholder={isLocked ? "Passe au plan Pro pour utiliser l'assistant" : "Écris ton message…"}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
@@ -263,24 +315,25 @@ export default function ChatAssistant({ enabled }: Props) {
                 fontFamily: "inherit",
                 background: "var(--clr-bg)",
                 color: "var(--clr-text)",
+                opacity: isLocked ? 0.5 : 1,
               }}
             />
             <button
               type="button"
-              disabled={loading || !input.trim()}
+              disabled={loading || !input.trim() || isLocked}
               onClick={() => void send()}
               aria-label="Envoyer"
               style={{
                 width: 48,
                 borderRadius: 12,
                 border: "none",
-                cursor: loading || !input.trim() ? "not-allowed" : "pointer",
+                cursor: loading || !input.trim() || isLocked ? "not-allowed" : "pointer",
                 background: "linear-gradient(135deg, rgba(124,92,252,0.95), rgba(99,102,241,0.95))",
                 color: "#fff",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                opacity: loading || !input.trim() ? 0.5 : 1,
+                opacity: loading || !input.trim() || isLocked ? 0.5 : 1,
               }}
             >
               {loading ? <span style={{ fontSize: "1rem" }}>⏳</span> : <Send size={20} />}

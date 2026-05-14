@@ -8,6 +8,7 @@ import {
   sanitizeClientMessages,
   sendChatMessage,
 } from "@/lib/ai/chat"
+import { checkCanUseAi } from "@/lib/plan-limits"
 
 export const runtime = "nodejs"
 export const maxDuration = 60
@@ -19,6 +20,18 @@ export async function POST(req: Request) {
   }
 
   const userId = session.user.id
+
+  const aiCheck = await checkCanUseAi(userId)
+  if (!aiCheck.allowed) {
+    return NextResponse.json(
+      {
+        error: aiCheck.reason,
+        code: "PLAN_LIMIT_REACHED",
+        plan: aiCheck.plan,
+      },
+      { status: 402 }
+    )
+  }
 
   const limited = await enforceRateLimit(
     "aiChatUser",

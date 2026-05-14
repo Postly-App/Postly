@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { Lock } from "lucide-react";
 import SocialIcon from "@/components/SocialIcon";
 
 type Row = {
@@ -37,13 +38,43 @@ function fmt(n: number): string {
   return n.toLocaleString("fr-FR");
 }
 
+function ProLockedCard({ title, description }: { title: string; description: string }) {
+  return (
+    <div style={{
+      background: "var(--clr-card)", border: "1px dashed rgba(124,92,252,0.4)",
+      borderRadius: 16, padding: 32, marginBottom: 24, textAlign: "center",
+    }}>
+      <div style={{
+        width: 44, height: 44, borderRadius: "50%",
+        background: "rgba(124,92,252,0.15)", display: "inline-flex",
+        alignItems: "center", justifyContent: "center", marginBottom: 12,
+      }}>
+        <Lock size={20} color="#9B82FD" />
+      </div>
+      <h2 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: 6 }}>{title}</h2>
+      <p style={{ color: "var(--clr-muted)", fontSize: "0.85rem", lineHeight: 1.6, marginBottom: 14, maxWidth: 420, marginLeft: "auto", marginRight: "auto" }}>
+        {description}
+      </p>
+      <Link href="/billing" style={{
+        display: "inline-block", padding: "9px 18px", borderRadius: 10,
+        background: "linear-gradient(135deg,#7C5CFC,#5B3EE8)", color: "#fff",
+        fontWeight: 700, fontSize: "0.82rem", textDecoration: "none",
+      }}>
+        Passer au plan Pro
+      </Link>
+    </div>
+  );
+}
+
 interface Props {
   rows: Row[];
   publishedCount: number;
+  advanced: boolean;
 }
 
-export default function AnalyticsClient({ rows, publishedCount }: Props) {
-  const [period, setPeriod] = useState<PeriodId>("30");
+export default function AnalyticsClient({ rows, publishedCount, advanced }: Props) {
+  const [period, setPeriod] = useState<PeriodId>(advanced ? "30" : "7");
+  const availablePeriods = advanced ? PERIODS : PERIODS.filter((p) => p.id === "7");
 
   const filteredRows = useMemo(() => {
     const days = parseInt(period, 10);
@@ -111,17 +142,31 @@ export default function AnalyticsClient({ rows, publishedCount }: Props) {
           </p>
         </div>
         <div style={{ display: "flex", background: "var(--clr-card)", border: "1px solid var(--clr-border)", borderRadius: 12, padding: 4 }}>
-          {PERIODS.map((p) => (
-            <button key={p.id} onClick={() => setPeriod(p.id)}
-              aria-pressed={period === p.id}
-              style={{
-                padding: "8px 18px", borderRadius: 10, border: "none",
-                fontSize: "0.875rem", fontWeight: 600, cursor: "pointer",
-                background: period === p.id ? "rgba(124,92,252,0.15)" : "transparent",
-                color: period === p.id ? "var(--clr-primary-h)" : "var(--clr-muted)",
-                fontFamily: "var(--font)",
-              }}>{p.label}</button>
-          ))}
+          {PERIODS.map((p) => {
+            const isAvailable = availablePeriods.some((ap) => ap.id === p.id);
+            return (
+              <button
+                key={p.id}
+                onClick={() => isAvailable && setPeriod(p.id)}
+                aria-pressed={period === p.id}
+                disabled={!isAvailable}
+                title={isAvailable ? "" : "Disponible avec le plan Pro"}
+                style={{
+                  padding: "8px 18px", borderRadius: 10, border: "none",
+                  fontSize: "0.875rem", fontWeight: 600,
+                  cursor: isAvailable ? "pointer" : "not-allowed",
+                  background: period === p.id ? "rgba(124,92,252,0.15)" : "transparent",
+                  color: period === p.id ? "var(--clr-primary-h)" : "var(--clr-muted)",
+                  fontFamily: "var(--font)",
+                  opacity: isAvailable ? 1 : 0.4,
+                  display: "flex", alignItems: "center", gap: 6,
+                }}
+              >
+                {!isAvailable && <Lock size={12} />}
+                {p.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -165,21 +210,28 @@ export default function AnalyticsClient({ rows, publishedCount }: Props) {
             ))}
           </div>
 
-          <div style={{ background: "var(--clr-card)", border: "1px solid var(--clr-border)", borderRadius: 16, padding: 24, marginBottom: 24 }}>
-            <h2 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: 20 }}>Portée sur {periodLabel}</h2>
-            <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 160, paddingTop: 8 }}>
-              {dailyChart.map((b, i) => (
-                <div key={i} title={`${fmt(b.value)} portée`} style={{
-                  flex: 1, height: `${b.pct}%`, minHeight: 2,
-                  borderRadius: "4px 4px 0 0",
-                  background: "linear-gradient(180deg,#7C5CFC,#5B3EE8)",
-                  opacity: b.value > 0 ? 1 : 0.3,
-                }} />
-              ))}
+          {advanced ? (
+            <div style={{ background: "var(--clr-card)", border: "1px solid var(--clr-border)", borderRadius: 16, padding: 24, marginBottom: 24 }}>
+              <h2 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: 20 }}>Portée sur {periodLabel}</h2>
+              <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 160, paddingTop: 8 }}>
+                {dailyChart.map((b, i) => (
+                  <div key={i} title={`${fmt(b.value)} portée`} style={{
+                    flex: 1, height: `${b.pct}%`, minHeight: 2,
+                    borderRadius: "4px 4px 0 0",
+                    background: "linear-gradient(180deg,#7C5CFC,#5B3EE8)",
+                    opacity: b.value > 0 ? 1 : 0.3,
+                  }} />
+                ))}
+              </div>
             </div>
-          </div>
+          ) : (
+            <ProLockedCard
+              title="Graphique de portée journalière"
+              description="Suivi quotidien sur 30 ou 90 jours, comparaisons et tendances."
+            />
+          )}
 
-          {platformBreakdown.length > 0 && (
+          {advanced && platformBreakdown.length > 0 && (
             <div style={{ background: "var(--clr-card)", border: "1px solid var(--clr-border)", borderRadius: 16, padding: 24 }}>
               <h2 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: 24 }}>Répartition par plateforme</h2>
               {platformBreakdown.map((p, i) => (
@@ -196,6 +248,12 @@ export default function AnalyticsClient({ rows, publishedCount }: Props) {
                 </div>
               ))}
             </div>
+          )}
+          {!advanced && (
+            <ProLockedCard
+              title="Répartition par plateforme"
+              description="Compare la portée de chaque réseau et identifie tes plateformes les plus performantes."
+            />
           )}
         </>
       )}

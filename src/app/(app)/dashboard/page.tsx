@@ -5,6 +5,7 @@ import { getUserPosts } from "@/lib/db/posts";
 import { normalizePlatformId } from "@/lib/platforms";
 import { prisma } from "@/lib/prisma";
 import { isAiChatConfigured } from "@/lib/ai/chat";
+import { getUserActivePlan, PLAN_LIMITS } from "@/lib/plan-limits";
 import DashboardClient from "./DashboardClient";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +18,9 @@ export default async function DashboardPage() {
 
   const since = new Date();
   since.setDate(since.getDate() - 30);
+
+  const plan = await getUserActivePlan(userId);
+  const planAiEnabled = PLAN_LIMITS[plan].aiAssistant;
 
   const [recentPosts, scheduledCount, publishedCount, totals, connectedAccounts] = await Promise.all([
     getUserPosts(userId, { limit: 8 }),
@@ -62,7 +66,8 @@ export default async function DashboardPage() {
       recentPosts={recentPosts}
       connectedAccounts={normalizedAccounts}
       user={session.user}
-      aiChatEnabled={isAiChatConfigured()}
+      aiChatEnabled={isAiChatConfigured() && planAiEnabled}
+      plan={plan}
     />
   );
 }

@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { getUserActivePlan, PLAN_LIMITS } from "@/lib/plan-limits";
 import AnalyticsClient from "./AnalyticsClient";
 
 export const dynamic = "force-dynamic";
@@ -11,8 +12,13 @@ export default async function AnalyticsPage() {
   if (!session?.user?.id) redirect("/login");
 
   const userId = session.user.id;
+  const plan = await getUserActivePlan(userId);
+  const advanced = PLAN_LIMITS[plan].advancedAnalytics;
+
+  // FREE = 7j max, PRO/AGENCY = 90j
+  const maxDays = advanced ? 90 : 7;
   const since = new Date();
-  since.setDate(since.getDate() - 30);
+  since.setDate(since.getDate() - maxDays);
 
   const [rows, publishedCount] = await Promise.all([
     prisma.analytics.findMany({
@@ -32,6 +38,7 @@ export default async function AnalyticsPage() {
     <AnalyticsClient
       rows={rows.map((r) => ({ ...r, recordedAt: r.recordedAt.toISOString() }))}
       publishedCount={publishedCount}
+      advanced={advanced}
     />
   );
 }
