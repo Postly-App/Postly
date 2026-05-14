@@ -1,7 +1,7 @@
 "use client"
 
 import { motion, useInView, useMotionValue, useTransform, animate } from "framer-motion"
-import { Rocket, Zap, Users, ShieldCheck } from "lucide-react"
+import { Rocket, Zap, Clock, ShieldCheck } from "lucide-react"
 import { useEffect, useRef } from "react"
 import { EASE } from "@/lib/motion"
 
@@ -17,10 +17,10 @@ interface Stat {
 }
 
 const STATS: Stat[] = [
-  { Icon: Rocket,      value: 25,    prefix: "+", suffix: "%",  label: "Engagement moyen", tint: "rgba(99,102,241,0.14)",  border: "rgba(99,102,241,0.28)" },
-  { Icon: Zap,         value: 10,                  suffix: "x",  label: "Plus rapide",      tint: "rgba(192,132,252,0.14)", border: "rgba(192,132,252,0.28)" },
-  { Icon: Users,       value: 2500,  prefix: "+",                label: "Utilisateurs actifs", tint: "rgba(244,114,182,0.12)", border: "rgba(244,114,182,0.28)" },
-  { Icon: ShieldCheck, value: 99.9,  suffix: "%", decimals: 1,   label: "Uptime garanti",   tint: "rgba(52,211,153,0.12)",  border: "rgba(52,211,153,0.28)" },
+  { Icon: Rocket,      value: 25,   prefix: "+", suffix: "%",                label: "Engagement moyen",   tint: "rgba(99,102,241,0.14)",  border: "rgba(99,102,241,0.28)" },
+  { Icon: Zap,         value: 10,                suffix: "x",                label: "Publication plus rapide", tint: "rgba(192,132,252,0.14)", border: "rgba(192,132,252,0.28)" },
+  { Icon: Clock,       value: 14,                suffix: " h/sem",           label: "De temps économisé", tint: "rgba(244,114,182,0.12)", border: "rgba(244,114,182,0.28)" },
+  { Icon: ShieldCheck, value: 99.9,              suffix: "%", decimals: 1,   label: "Uptime garanti",     tint: "rgba(52,211,153,0.12)",  border: "rgba(52,211,153,0.28)" },
 ]
 
 function AnimatedNumber({ value, decimals = 0, prefix = "", suffix = "" }: { value: number; decimals?: number; prefix?: string; suffix?: string }) {

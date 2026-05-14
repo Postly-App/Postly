@@ -14,10 +14,10 @@ import { useEffect, useRef } from "react"
  *   5. Overlay gradient pour lisibilité du contenu
  */
 
-// Tu peux remplacer cette URL par n'importe quelle photo de ville nuit.
-// Unsplash CC0, gratuit, optimisé Next/Image automatiquement.
+// Vue aérienne top-down (drone / hauteur) — autoroute nuit, trainées lumineuses,
+// AUCUNE marque visible. Denys Nevozhai sur Unsplash (CC0).
 const CITY_PHOTO =
-  "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?auto=format&fit=crop&w=2400&q=85"
+  "https://images.unsplash.com/photo-1502920917128-1aa500764cbd?auto=format&fit=crop&w=2400&q=85"
 
 export default function CityNightHero() {
   const ref = useRef<HTMLDivElement>(null)
@@ -30,7 +30,10 @@ export default function CityNightHero() {
       cancelAnimationFrame(raf)
       raf = requestAnimationFrame(() => {
         const y = window.scrollY
-        el.style.transform = `translate3d(0, ${y * 0.18}px, 0) scale(${1 + Math.min(y, 600) * 0.0002})`
+        // Léger drift + slow zoom sur l'image — perceptible mais discret puisque le bg est fixed
+        const drift = Math.min(y * 0.04, 60)
+        const zoom = 1 + Math.min(y, 1200) * 0.00015
+        el.style.transform = `translate3d(0, ${drift}px, 0) scale(${zoom})`
       })
     }
     window.addEventListener("scroll", onScroll, { passive: true })
@@ -44,7 +47,7 @@ export default function CityNightHero() {
     <div
       aria-hidden="true"
       style={{
-        position: "absolute",
+        position: "fixed",
         inset: 0,
         zIndex: 0,
         pointerEvents: "none",
@@ -228,14 +231,13 @@ export default function CityNightHero() {
         ))}
       </svg>
 
-      {/* ─── Couche 5 : vignette + bottom fade vers content suivant ─── */}
+      {/* ─── Couche 5 : vignette latérale subtile (pas de fade vers le bas, le bg reste partout) ─── */}
       <div
         style={{
           position: "absolute",
           inset: 0,
           background:
-            "radial-gradient(ellipse 100% 70% at 50% 100%, rgba(6,7,15,0.4) 0%, transparent 50%)," +
-            "linear-gradient(180deg, transparent 0%, transparent 75%, var(--surface-1) 100%)",
+            "radial-gradient(ellipse 100% 80% at 50% 50%, transparent 0%, rgba(6,7,15,0.35) 80%, rgba(6,7,15,0.55) 100%)",
         }}
       />
 

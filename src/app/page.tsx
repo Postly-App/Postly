@@ -31,6 +31,9 @@ export default function HomePage() {
       <div className="relative min-h-screen overflow-x-hidden" style={{ color: "var(--clr-text)" }}>
       <BootSplash />
 
+      {/* Background ville la nuit — fixed, visible sur TOUTE la landing */}
+      <CityNightHero />
+
       <div id="scroll-progress" aria-hidden="true" />
 
       <div style={{ position: "relative", zIndex: 3 }}>
@@ -163,10 +166,7 @@ function HeroSection() {
         justifyContent: "flex-start",
       }}
     >
-      {/* Background ville la nuit avec light trails animés */}
-      <CityNightHero />
-
-      {/* Contenu hero */}
+      {/* Contenu hero (le background est rendu au niveau page root) */}
       <motion.div
         style={{
           position: "relative",
@@ -333,8 +333,6 @@ function HeroSection() {
               </MagneticLink>
             </motion.div>
 
-            {/* Trust line */}
-            <TrustLine />
           </div>
 
           {/* ─── Colonne phone mockup (desktop seulement) ─── */}
@@ -360,61 +358,6 @@ function HeroSection() {
         }
       `}</style>
     </section>
-  );
-}
-
-/** Avatars empilés + ligne de social proof */
-function TrustLine() {
-  // Initiales colorées pour des avatars sans réelles photos (privacy + zéro broken image)
-  const avatars = [
-    { initials: "ML", bg: "linear-gradient(135deg,#F472B6,#EC4899)" },
-    { initials: "TS", bg: "linear-gradient(135deg,#60A5FA,#3B82F6)" },
-    { initials: "AR", bg: "linear-gradient(135deg,#34D399,#10B981)" },
-    { initials: "JK", bg: "linear-gradient(135deg,#FBBF24,#F59E0B)" },
-    { initials: "VN", bg: "linear-gradient(135deg,#A78BFA,#8B5CF6)" },
-  ];
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.7, delay: 0.42, ease: EASE }}
-      style={{ display: "flex", alignItems: "center", gap: 14 }}
-    >
-      <div style={{ display: "flex" }}>
-        {avatars.map((a, i) => (
-          <div
-            key={i}
-            style={{
-              width: 34,
-              height: 34,
-              borderRadius: "50%",
-              background: a.bg,
-              border: "2px solid var(--surface-1)",
-              marginLeft: i === 0 ? 0 : -10,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "0.72rem",
-              fontWeight: 700,
-              color: "#fff",
-              letterSpacing: "-0.01em",
-              boxShadow: "0 4px 10px rgba(0,0,0,0.3)",
-              zIndex: avatars.length - i,
-            }}
-          >
-            {a.initials}
-          </div>
-        ))}
-      </div>
-      <div>
-        <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-1)" }}>
-          Rejoignez <span style={{ color: "#A5B4FC" }}>+2 500 créateurs et agences</span>
-        </div>
-        <div style={{ fontSize: "0.78rem", color: "var(--text-3)", marginTop: 2 }}>
-          qui utilisent Postly au quotidien
-        </div>
-      </div>
-    </motion.div>
   );
 }
 
