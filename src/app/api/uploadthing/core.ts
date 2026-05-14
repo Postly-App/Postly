@@ -15,6 +15,8 @@ import {
   validateUploadFileInit,
   verifyRemoteUploadMagicBytes,
 } from "@/lib/uploads/validation";
+import { checkCanUpload } from "@/lib/plan-limits";
+import { prisma } from "@/lib/prisma";
 
 const f = createUploadthing({
   errorFormatter: (err) => ({
@@ -34,6 +36,16 @@ export const ourFileRouter = {
       const session = await getServerSession(authOptions);
       if (!session?.user?.id) {
         throw new UploadThingError("UNAUTHORIZED");
+      }
+
+      const totalIncomingBytes = files.reduce((sum, f) => sum + (f.size ?? 0), 0);
+      const quotaCheck = await checkCanUpload(session.user.id, totalIncomingBytes);
+      if (!quotaCheck.allowed) {
+        logUploadValidationFailure("middleware", quotaCheck.reason);
+        throw new UploadThingError({
+          code: "BAD_REQUEST",
+          message: quotaCheck.reason,
+        });
       }
 
       const mapped = files.map((file) => {
@@ -59,7 +71,7 @@ export const ourFileRouter = {
         [UTFiles]: mapped,
       };
     })
-    .onUploadComplete(async ({ file }) => {
+    .onUploadComplete(async ({ file, metadata }) => {
       const name = normalizeUploadFilename(file.name);
       try {
         const kind = classifyUploadKindFromClientMeta({
@@ -68,6 +80,18 @@ export const ourFileRouter = {
           type: file.type,
         });
         await verifyRemoteUploadMagicBytes(file.ufsUrl, kind);
+
+        // Incrémente le compteur de stockage (best-effort, ne bloque pas l'upload)
+        if (metadata?.userId && file.size) {
+          await prisma.user
+            .update({
+              where: { id: metadata.userId },
+              data: { storageBytes: { increment: BigInt(file.size) } },
+            })
+            .catch(() => {
+              /* observabilité optionnelle, l'upload reste valide */
+            });
+        }
       } catch (e) {
         if (e instanceof MediaValidationError) {
           logUploadValidationFailure("onUploadComplete", e.message);

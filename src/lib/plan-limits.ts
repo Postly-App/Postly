@@ -15,6 +15,7 @@ export const PLAN_LIMITS = {
     multiClient: false,
     publicApi: false,
     whiteLabel: false,
+    storageBytes: 1 * 1024 * 1024 * 1024, // 1 GB
   },
   PRO: {
     maxSocialAccounts: 15,
@@ -25,6 +26,7 @@ export const PLAN_LIMITS = {
     multiClient: false,
     publicApi: false,
     whiteLabel: false,
+    storageBytes: 50 * 1024 * 1024 * 1024, // 50 GB
   },
   AGENCY: {
     maxSocialAccounts: Infinity,
@@ -35,6 +37,7 @@ export const PLAN_LIMITS = {
     multiClient: true,
     publicApi: true,
     whiteLabel: true,
+    storageBytes: 500 * 1024 * 1024 * 1024, // 500 GB
   },
 } as const satisfies Record<
   Plan,
@@ -47,6 +50,7 @@ export const PLAN_LIMITS = {
     multiClient: boolean
     publicApi: boolean
     whiteLabel: boolean
+    storageBytes: number
   }
 >
 
@@ -90,6 +94,35 @@ export async function checkCanUseAgencyFeature(
         "Cette fonctionnalité est réservée au plan Agence.",
       limit: 0,
       current: 0,
+      plan,
+    }
+  }
+  return { allowed: true }
+}
+
+/**
+ * Vérifie qu'un fichier de taille `incomingBytes` peut être uploadé sans dépasser le quota.
+ */
+export async function checkCanUpload(
+  userId: string,
+  incomingBytes: number,
+  options?: { plan?: Plan }
+): Promise<PlanCheckResult> {
+  const plan = options?.plan ?? (await getUserActivePlan(userId))
+  const limit = PLAN_LIMITS[plan].storageBytes
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { storageBytes: true },
+  })
+  const used = user?.storageBytes ? Number(user.storageBytes) : 0
+  if (used + incomingBytes > limit) {
+    const gbLimit = (limit / (1024 ** 3)).toFixed(0)
+    return {
+      allowed: false,
+      reason: `Quota de stockage dépassé (${gbLimit} Go pour le plan ${plan}). Supprime des médias ou passe au plan supérieur.`,
+      limit,
+      current: used,
       plan,
     }
   }
