@@ -9,6 +9,7 @@ import {
   parseAndValidateMediaUrlList,
 } from "@/lib/uploads/validation"
 import { logger } from "@/lib/logger"
+import { checkCanSchedulePost } from "@/lib/plan-limits"
 
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions)
@@ -78,6 +79,16 @@ export async function POST(req: Request) {
           )
         }
         throw e
+      }
+    }
+
+    if (scheduledAt) {
+      const check = await checkCanSchedulePost(session.user.id)
+      if (!check.allowed) {
+        return NextResponse.json(
+          { error: check.reason, code: "PLAN_LIMIT_REACHED", limit: check.limit, current: check.current, plan: check.plan },
+          { status: 402 }
+        )
       }
     }
 

@@ -9,7 +9,6 @@ import { toast } from "sonner";
 const PLATFORMS = [
   { id: "INSTAGRAM", label: "Instagram", color: "#E1306C", maxChars: 2200 },
   { id: "TWITTER",   label: "Twitter/X", color: "#1DA1F2", maxChars: 280 },
-  { id: "LINKEDIN",  label: "LinkedIn",  color: "#0A66C2", maxChars: 3000 },
   { id: "TIKTOK",    label: "TikTok",    color: "#010101", maxChars: 2200 },
   { id: "YOUTUBE",   label: "YouTube",   color: "#FF0000", maxChars: 5000 },
   { id: "FACEBOOK",  label: "Facebook",  color: "#1877F2", maxChars: 63206 },
@@ -32,7 +31,7 @@ type PublishMode = "now" | "scheduled" | "draft";
 export default function ComposePage() {
   const router = useRouter();
   const [content, setContent]                     = useState("");
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(["INSTAGRAM", "LINKEDIN"]);
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(["INSTAGRAM", "TWITTER"]);
   const [publishMode, setPublishMode]             = useState<PublishMode>("scheduled");
   const [scheduledDate, setScheduledDate]         = useState("");
   const [scheduledTime, setScheduledTime]         = useState("18:00");

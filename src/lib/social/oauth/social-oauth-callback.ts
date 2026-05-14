@@ -9,8 +9,16 @@ import {
   SocialTokenEncryptionConfigurationError,
 } from "../social-token-crypto"
 import { logger } from "@/lib/logger"
+import { checkCanAddSocialAccount } from "@/lib/plan-limits"
 
 const GRAPH_FB = "https://graph.facebook.com/v18.0"
+
+class SocialPlanLimitError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = "SocialPlanLimitError"
+  }
+}
 
 function redirectSettings(search: string): NextResponse {
   const res = NextResponse.redirect(new URL(`/settings?${search}`, oauthCallbackBaseUrl()))
@@ -363,6 +371,18 @@ async function upsertSocial(
   refreshToken: string | null,
   expiresAt: Date | null
 ) {
+  const existing = await prisma.socialAccount.findUnique({
+    where: { userId_platform_accountId: { userId, platform, accountId } },
+    select: { id: true },
+  })
+
+  if (!existing) {
+    const check = await checkCanAddSocialAccount(userId)
+    if (!check.allowed) {
+      throw new SocialPlanLimitError(check.reason)
+    }
+  }
+
   const enc = encryptSocialTokensForPersistence({ accessToken, refreshToken })
   await prisma.socialAccount.upsert({
     where: {
@@ -546,6 +566,10 @@ export async function handleSocialOauthCallback(slug: string, req: Request): Pro
     if (e instanceof SocialTokenEncryptionConfigurationError) {
       logger.error("oauth.callback.crypto_config", { slug: s, err: e })
       return redirectSettings("social_error=social_token_crypto")
+    }
+    if (e instanceof SocialPlanLimitError) {
+      logger.info("oauth.callback.plan_limit", { slug: s, msg: e.message })
+      return redirectSettings(`social_error=${encodeURIComponent(e.message.slice(0, 240))}`)
     }
     logger.error("oauth.callback.failed", { slug: s, err: e })
     const msg = e instanceof Error ? e.message : "token_exchange"

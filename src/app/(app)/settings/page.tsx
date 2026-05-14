@@ -9,7 +9,6 @@ const PLATFORMS = [
   { id: "FACEBOOK",  label: "Facebook",   color: "#1877F2", bg: "rgba(24,119,242,0.12)",  desc: "Posts sur pages et groupes" },
   { id: "INSTAGRAM", label: "Instagram",  color: "#E1306C", bg: "rgba(225,48,108,0.12)",  desc: "Publie photos, reels et stories" },
   { id: "YOUTUBE",   label: "YouTube",    color: "#FF0000", bg: "rgba(255,0,0,0.1)",      desc: "Shorts et vidéos longues" },
-  { id: "LINKEDIN",  label: "LinkedIn",   color: "#0A66C2", bg: "rgba(10,102,194,0.12)",  desc: "Posts professionnels et articles" },
   { id: "TWITTER",   label: "Twitter / X", color: "#1DA1F2", bg: "rgba(29,161,242,0.12)",  desc: "Tweets, threads et médias" },
   { id: "THREADS",   label: "Threads",    color: "#9B99B5", bg: "rgba(255,255,255,0.06)", desc: "Posts courts et fils de discussion" },
   { id: "PINTEREST", label: "Pinterest",  color: "#BD081C", bg: "rgba(189,8,28,0.12)",   desc: "Épingles et tableaux" },

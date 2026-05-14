@@ -12,6 +12,8 @@ import { publishFacebookPage } from "./providers/facebook"
 import { publishLinkedInMember } from "./providers/linkedin"
 import { publishInstagramBusiness } from "./providers/instagram"
 import { publishThreads } from "./providers/threads"
+import { publishTikTok } from "./providers/tiktok"
+import { publishYouTube } from "./providers/youtube"
 import {
   isSocialTokenCryptoError,
   safeSocialTokenErrorMessageForClient,
@@ -26,6 +28,8 @@ const AUTO_PUBLISH_PLATFORMS: ReadonlySet<PlatformId> = new Set([
   "FACEBOOK",
   "INSTAGRAM",
   "THREADS",
+  "TIKTOK",
+  "YOUTUBE",
 ])
 
 function toReadableError(e: unknown): string {
@@ -86,6 +90,10 @@ async function runPlatformPublish(
       return publishInstagramBusiness(account, ctx)
     case "THREADS":
       return publishThreads(account, ctx)
+    case "TIKTOK":
+      return publishTikTok(account, ctx)
+    case "YOUTUBE":
+      return publishYouTube(account, ctx)
     default:
       throw new Error(`Publication automatique non prise en charge pour ${platform}.`)
   }

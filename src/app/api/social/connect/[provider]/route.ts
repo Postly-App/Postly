@@ -11,6 +11,7 @@ import {
   SocialTokenEncryptionConfigurationError,
   logSocialTokenCryptoFailure,
 } from "@/lib/social/social-token-crypto"
+import { checkCanAddSocialAccount } from "@/lib/plan-limits"
 
 // GET /api/social/connect/[provider] — liste des comptes connectés
 export async function GET(
@@ -80,6 +81,27 @@ export async function POST(
     },
     data: { platform: canonical },
   })
+
+  const existing = await prisma.socialAccount.findUnique({
+    where: {
+      userId_platform_accountId: {
+        userId: session.user.id,
+        platform: canonical,
+        accountId,
+      },
+    },
+    select: { id: true },
+  })
+
+  if (!existing) {
+    const check = await checkCanAddSocialAccount(session.user.id)
+    if (!check.allowed) {
+      return NextResponse.json(
+        { error: check.reason, code: "PLAN_LIMIT_REACHED", limit: check.limit, current: check.current, plan: check.plan },
+        { status: 402 }
+      )
+    }
+  }
 
   let encrypted: ReturnType<typeof encryptSocialTokensForPersistence>
   try {
