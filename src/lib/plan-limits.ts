@@ -11,18 +11,30 @@ export const PLAN_LIMITS = {
     maxScheduledPostsPerMonth: 10,
     aiAssistant: false,
     advancedAnalytics: false,
+    teamSeats: 0,
+    multiClient: false,
+    publicApi: false,
+    whiteLabel: false,
   },
   PRO: {
     maxSocialAccounts: 15,
     maxScheduledPostsPerMonth: Infinity,
     aiAssistant: true,
     advancedAnalytics: true,
+    teamSeats: 0,
+    multiClient: false,
+    publicApi: false,
+    whiteLabel: false,
   },
   AGENCY: {
     maxSocialAccounts: Infinity,
     maxScheduledPostsPerMonth: Infinity,
     aiAssistant: true,
     advancedAnalytics: true,
+    teamSeats: 5,
+    multiClient: true,
+    publicApi: true,
+    whiteLabel: true,
   },
 } as const satisfies Record<
   Plan,
@@ -31,6 +43,10 @@ export const PLAN_LIMITS = {
     maxScheduledPostsPerMonth: number
     aiAssistant: boolean
     advancedAnalytics: boolean
+    teamSeats: number
+    multiClient: boolean
+    publicApi: boolean
+    whiteLabel: boolean
   }
 >
 
@@ -53,6 +69,31 @@ export async function getUserActivePlan(userId: string): Promise<Plan> {
   const validStatuses: ReadonlyArray<string> = ["ACTIVE", "TRIALING", "PAST_DUE"]
   if (!validStatuses.includes(sub.status)) return "FREE"
   return sub.plan
+}
+
+/**
+ * Vérifie si l'utilisateur a accès aux features AGENCY (multi-clients, équipe, API, white-label).
+ */
+export async function checkCanUseAgencyFeature(
+  userId: string,
+  feature: "multiClient" | "publicApi" | "whiteLabel" | "teamSeats",
+  options?: { plan?: Plan }
+): Promise<PlanCheckResult> {
+  const plan = options?.plan ?? (await getUserActivePlan(userId))
+  const limits = PLAN_LIMITS[plan]
+  const hasAccess =
+    feature === "teamSeats" ? limits.teamSeats > 0 : limits[feature]
+  if (!hasAccess) {
+    return {
+      allowed: false,
+      reason:
+        "Cette fonctionnalité est réservée au plan Agence.",
+      limit: 0,
+      current: 0,
+      plan,
+    }
+  }
+  return { allowed: true }
 }
 
 /**
