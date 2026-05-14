@@ -1,58 +1,35 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import Logo from "@/components/Logo";
 import { motion, useScroll, useSpring, useTransform } from "framer-motion";
 import MagneticLink from "@/components/cinematic/MagneticLink";
 import TiltCard from "@/components/cinematic/TiltCard";
-import LiveDashboard from "@/components/cinematic/LiveDashboard";
 import Marquee from "@/components/cinematic/Marquee";
 import BootSplash from "@/components/cinematic/BootSplash";
 import LenisProvider from "@/components/cinematic/LenisProvider";
 import CustomCursor from "@/components/cinematic/CustomCursor";
 import LandingChatWidget from "@/components/landing/LandingChatWidget";
-import AerialCity from "@/components/landing/AerialCity";
-import { ArrowUpRight, ArrowRight, CalendarClock, Sparkles, LineChart } from "lucide-react";
+import CityNightHero from "@/components/landing/CityNightHero";
+import HeroPhoneMockup from "@/components/landing/HeroPhoneMockup";
+import HeroStatsBar from "@/components/landing/HeroStatsBar";
+import { ArrowUpRight, Play, CalendarClock, Sparkles, LineChart } from "lucide-react";
 
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
 /* ═══════════════════════════════════════════════════════════
    ROOT
 ═══════════════════════════════════════════════════════════ */
-function useIsDesktop(): boolean {
-  const [isDesktop, setIsDesktop] = useState(false);
-  useEffect(() => {
-    const m = window.matchMedia("(min-width: 1024px) and (prefers-reduced-motion: no-preference)");
-    setIsDesktop(m.matches);
-    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
-    m.addEventListener("change", handler);
-    return () => m.removeEventListener("change", handler);
-  }, []);
-  return isDesktop;
-}
-
 export default function HomePage() {
   useScrollProgress();
   useScrollReveal();
-  const isDesktop = useIsDesktop();
 
   return (
     <LenisProvider>
       <CustomCursor />
       <div className="relative min-h-screen overflow-x-hidden" style={{ color: "var(--clr-text)" }}>
       <BootSplash />
-
-      {/* Vue aérienne nocturne — desktop full, mobile densité réduite */}
-      <AerialCity density={isDesktop ? "high" : "medium"} />
-
-      {/* Overlay lisibilité contenu — léger gradient froid */}
-      <div aria-hidden="true" style={{
-        position: "fixed", inset: 0, zIndex: 2, pointerEvents: "none",
-        background:
-          "radial-gradient(ellipse 80% 50% at 50% 20%, rgba(99,102,241,0.06), transparent 60%)," +
-          "linear-gradient(180deg, rgba(3,5,11,0.20) 0%, rgba(3,5,11,0.45) 60%, rgba(3,5,11,0.85) 100%)",
-      }} />
 
       <div id="scroll-progress" aria-hidden="true" />
 
@@ -170,149 +147,274 @@ function HeroSection() {
     target: ref,
     offset: ["start start", "end start"],
   });
-  const yTitle = useSpring(useTransform(scrollYProgress, [0, 1], [0, -120]), { stiffness: 80, damping: 22 });
-  const yDash = useSpring(useTransform(scrollYProgress, [0, 1], [0, -40]), { stiffness: 80, damping: 22 });
+  const yContent = useSpring(useTransform(scrollYProgress, [0, 1], [0, -80]), { stiffness: 80, damping: 22 });
   const opacityHero = useTransform(scrollYProgress, [0, 0.7], [1, 0]);
-  const blurHero = useTransform(scrollYProgress, [0, 0.6], [0, 6]);
-  const filter = useTransform(blurHero, (b) => `blur(${b}px)`);
 
   return (
-    <section ref={ref} style={{
-      position: "relative", overflow: "hidden",
-      padding: "160px 0 100px",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      flexDirection: "column", textAlign: "center",
-      minHeight: "92vh",
-    }}>
-      <motion.div style={{ position: "relative", zIndex: 2, maxWidth: 1200, margin: "0 auto", padding: "0 24px", width: "100%", y: yTitle, opacity: opacityHero, filter, willChange: "transform" }}>
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: EASE }}
+    <section
+      ref={ref}
+      style={{
+        position: "relative",
+        overflow: "hidden",
+        padding: "140px 0 60px",
+        minHeight: "92vh",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "flex-start",
+      }}
+    >
+      {/* Background ville la nuit avec light trails animés */}
+      <CityNightHero />
+
+      {/* Contenu hero */}
+      <motion.div
+        style={{
+          position: "relative",
+          zIndex: 3,
+          maxWidth: 1280,
+          margin: "0 auto",
+          padding: "0 24px",
+          width: "100%",
+          y: yContent,
+          opacity: opacityHero,
+          willChange: "transform",
+        }}
+      >
+        <div
           style={{
-            display: "inline-flex", alignItems: "center", gap: 10,
-            padding: "5px 12px 5px 10px", borderRadius: 100,
-            background: "rgba(180,200,255,0.04)",
-            border: "1px solid rgba(180,200,255,0.10)",
-            backdropFilter: "blur(12px)",
-            WebkitBackdropFilter: "blur(12px)",
-            fontSize: "0.78rem", fontWeight: 500,
-            color: "var(--text-2)",
-            letterSpacing: "0.01em",
-            marginBottom: 36,
+            display: "grid",
+            gridTemplateColumns: "minmax(0, 1fr) auto",
+            gap: 48,
+            alignItems: "center",
           }}
+          className="hero-grid"
         >
-          <span style={{
-            width: 6, height: 6, borderRadius: "50%",
-            background: "var(--success)",
-            animation: "pulse 2.4s ease-in-out infinite",
-            display: "inline-block",
-            boxShadow: "0 0 10px rgba(52,211,153,0.6), 0 0 0 3px rgba(52,211,153,0.08)",
-          }} />
-          <span style={{ color: "var(--text-1)" }}>Nouveau</span>
-          <span style={{ color: "var(--text-3)" }}>—</span>
-          <span>Assistant IA v2.0 disponible</span>
-        </motion.div>
+          {/* ─── Colonne texte ─── */}
+          <div style={{ minWidth: 0 }}>
+            {/* Badge */}
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease: EASE }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "5px 12px 5px 10px",
+                borderRadius: 100,
+                background: "rgba(99,102,241,0.10)",
+                border: "1px solid rgba(99,102,241,0.28)",
+                backdropFilter: "blur(12px)",
+                WebkitBackdropFilter: "blur(12px)",
+                fontSize: "0.74rem",
+                fontWeight: 600,
+                color: "#A5B4FC",
+                letterSpacing: "0.05em",
+                textTransform: "uppercase",
+                marginBottom: 28,
+              }}
+            >
+              <Play size={11} fill="#A5B4FC" strokeWidth={0} />
+              La plateforme n°1 pour vos réseaux sociaux
+            </motion.div>
 
-        <motion.h1
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.85, delay: 0.08, ease: EASE }}
-          style={{
-            fontSize: "clamp(2.6rem, 6.8vw, 5.4rem)",
-            fontWeight: 600,
-            letterSpacing: "-0.04em",
-            lineHeight: 1.02,
-            marginBottom: 22,
-            color: "var(--text-1)",
-          }}
-        >
-          La console de pilotage
-          <br />
-          <span style={{
-            background: "linear-gradient(180deg, #B4BCD0 0%, #7C8AA8 100%)",
-            WebkitBackgroundClip: "text",
-            backgroundClip: "text",
-            color: "transparent",
-            fontStyle: "italic",
-            fontWeight: 500,
-          }}>
-            de ta présence sociale
-          </span>
-        </motion.h1>
+            {/* H1 */}
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.9, delay: 0.08, ease: EASE }}
+              style={{
+                fontSize: "clamp(2.4rem, 5.8vw, 4.4rem)",
+                fontWeight: 700,
+                letterSpacing: "-0.035em",
+                lineHeight: 1.02,
+                marginBottom: 22,
+                color: "var(--text-1)",
+              }}
+            >
+              Publiez. Analysez.
+              <br />
+              <span
+                style={{
+                  background: "linear-gradient(135deg, #818CF8 0%, #C084FC 60%, #F472B6 100%)",
+                  WebkitBackgroundClip: "text",
+                  backgroundClip: "text",
+                  color: "transparent",
+                  display: "inline-block",
+                }}
+              >
+                Développez.
+              </span>
+            </motion.h1>
 
-        <motion.p
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.18, ease: EASE }}
-          style={{
-            fontSize: "clamp(1.02rem, 1.4vw, 1.18rem)",
-            color: "var(--text-3)",
-            maxWidth: 560, margin: "0 auto 40px",
-            lineHeight: 1.6,
-            letterSpacing: "-0.005em",
-          }}
-        >
-          Planifie, publie et analyse tes contenus sur tous les réseaux depuis
-          un seul cockpit. Conçu pour les créateurs qui veulent piloter, pas bricoler.
-        </motion.p>
+            {/* Subtitle */}
+            <motion.p
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.75, delay: 0.18, ease: EASE }}
+              style={{
+                fontSize: "1.1rem",
+                color: "var(--text-3)",
+                maxWidth: 540,
+                lineHeight: 1.6,
+                marginBottom: 36,
+                letterSpacing: "-0.005em",
+              }}
+            >
+              Gérez tous vos réseaux sociaux depuis une seule plateforme.
+              Gagnez du temps, créez du contenu incroyable et développez
+              votre audience comme jamais.
+            </motion.p>
 
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.28, ease: EASE }}
-          style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center", marginBottom: 80 }}
-        >
-          <MagneticLink
-            href="/signup"
-            strength={16}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "13px 22px 13px 26px",
-              borderRadius: 12,
-              fontSize: "0.94rem",
-              fontWeight: 500,
-              color: "#fff",
-              background: "linear-gradient(180deg, #6366F1 0%, #4F46E5 100%)",
-              boxShadow: "0 1px 0 0 rgba(255,255,255,0.16) inset, 0 0 0 1px rgba(99,102,241,0.4), 0 8px 28px -8px rgba(79,70,229,0.5)",
-              letterSpacing: "-0.005em",
-            }}
-          >
-            Commencer gratuitement
-            <ArrowUpRight size={16} strokeWidth={2} style={{ marginTop: -1 }} />
-          </MagneticLink>
-          <MagneticLink
-            href="#demo"
-            strength={10}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "13px 22px",
-              borderRadius: 12,
-              fontSize: "0.94rem",
-              fontWeight: 500,
-              color: "var(--text-2)",
-              background: "rgba(180,200,255,0.03)",
-              border: "1px solid var(--line-2)",
-              backdropFilter: "blur(12px)",
-              WebkitBackdropFilter: "blur(12px)",
-              letterSpacing: "-0.005em",
-            }}
-          >
-            Voir la démo
-            <ArrowRight size={16} strokeWidth={1.75} />
-          </MagneticLink>
-        </motion.div>
+            {/* CTAs */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.28, ease: EASE }}
+              style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 36 }}
+            >
+              <MagneticLink
+                href="/signup"
+                strength={14}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "14px 28px",
+                  borderRadius: 14,
+                  fontSize: "0.95rem",
+                  fontWeight: 600,
+                  color: "#fff",
+                  background: "linear-gradient(180deg, #6366F1 0%, #4F46E5 100%)",
+                  boxShadow:
+                    "0 1px 0 0 rgba(255,255,255,0.18) inset, " +
+                    "0 0 0 1px rgba(99,102,241,0.4), " +
+                    "0 12px 32px -8px rgba(79,70,229,0.55), " +
+                    "0 0 60px -10px rgba(99,102,241,0.4)",
+                  letterSpacing: "-0.005em",
+                }}
+              >
+                Commencer gratuitement
+                <ArrowUpRight size={16} strokeWidth={2.2} />
+              </MagneticLink>
+              <MagneticLink
+                href="#demo"
+                strength={10}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "14px 22px 14px 16px",
+                  borderRadius: 14,
+                  fontSize: "0.95rem",
+                  fontWeight: 500,
+                  color: "var(--text-1)",
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid var(--line-3)",
+                  backdropFilter: "blur(12px)",
+                  WebkitBackdropFilter: "blur(12px)",
+                  letterSpacing: "-0.005em",
+                }}
+              >
+                <div
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: "50%",
+                    background: "rgba(255,255,255,0.10)",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Play size={11} fill="currentColor" strokeWidth={0} style={{ marginLeft: 2 }} />
+                </div>
+                Voir une démo
+              </MagneticLink>
+            </motion.div>
 
-        {/* Live dashboard */}
-        <motion.div id="demo" style={{ y: yDash, willChange: "transform" }}>
-          <LiveDashboard />
-        </motion.div>
+            {/* Trust line */}
+            <TrustLine />
+          </div>
+
+          {/* ─── Colonne phone mockup (desktop seulement) ─── */}
+          <div className="hero-phone-wrap" style={{ display: "flex", justifyContent: "center" }}>
+            <HeroPhoneMockup />
+          </div>
+        </div>
+
+        {/* Stats bar */}
+        <div style={{ marginTop: 56 }}>
+          <HeroStatsBar />
+        </div>
       </motion.div>
+
+      <style jsx>{`
+        @media (max-width: 1023px) {
+          :global(.hero-grid) {
+            grid-template-columns: 1fr !important;
+          }
+          :global(.hero-phone-wrap) {
+            display: none !important;
+          }
+        }
+      `}</style>
     </section>
+  );
+}
+
+/** Avatars empilés + ligne de social proof */
+function TrustLine() {
+  // Initiales colorées pour des avatars sans réelles photos (privacy + zéro broken image)
+  const avatars = [
+    { initials: "ML", bg: "linear-gradient(135deg,#F472B6,#EC4899)" },
+    { initials: "TS", bg: "linear-gradient(135deg,#60A5FA,#3B82F6)" },
+    { initials: "AR", bg: "linear-gradient(135deg,#34D399,#10B981)" },
+    { initials: "JK", bg: "linear-gradient(135deg,#FBBF24,#F59E0B)" },
+    { initials: "VN", bg: "linear-gradient(135deg,#A78BFA,#8B5CF6)" },
+  ];
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.7, delay: 0.42, ease: EASE }}
+      style={{ display: "flex", alignItems: "center", gap: 14 }}
+    >
+      <div style={{ display: "flex" }}>
+        {avatars.map((a, i) => (
+          <div
+            key={i}
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: "50%",
+              background: a.bg,
+              border: "2px solid var(--surface-1)",
+              marginLeft: i === 0 ? 0 : -10,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "0.72rem",
+              fontWeight: 700,
+              color: "#fff",
+              letterSpacing: "-0.01em",
+              boxShadow: "0 4px 10px rgba(0,0,0,0.3)",
+              zIndex: avatars.length - i,
+            }}
+          >
+            {a.initials}
+          </div>
+        ))}
+      </div>
+      <div>
+        <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-1)" }}>
+          Rejoignez <span style={{ color: "#A5B4FC" }}>+2 500 créateurs et agences</span>
+        </div>
+        <div style={{ fontSize: "0.78rem", color: "var(--text-3)", marginTop: 2 }}>
+          qui utilisent Postly au quotidien
+        </div>
+      </div>
+    </motion.div>
   );
 }
 

@@ -7,6 +7,13 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(__dirname),
   },
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "images.unsplash.com" },
+      { protocol: "https", hostname: "utfs.io" },
+      { protocol: "https", hostname: "uploadthing.com" },
+    ],
+  },
   async headers() {
     const security: { key: string; value: string }[] = [
       { key: "X-Frame-Options", value: "SAMEORIGIN" },
