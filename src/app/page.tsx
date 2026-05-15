@@ -11,7 +11,7 @@ import BootSplash from "@/components/cinematic/BootSplash";
 import LenisProvider from "@/components/cinematic/LenisProvider";
 import CustomCursor from "@/components/cinematic/CustomCursor";
 import LandingChatWidget from "@/components/landing/LandingChatWidget";
-import CityNightHero from "@/components/landing/CityNightHero";
+import AerialCityCanvas from "@/components/landing/AerialCityCanvas";
 import HeroPhoneMockup from "@/components/landing/HeroPhoneMockup";
 import HeroStatsBar from "@/components/landing/HeroStatsBar";
 import { ArrowUpRight, Play, CalendarClock, Sparkles, LineChart } from "lucide-react";
@@ -31,8 +31,8 @@ export default function HomePage() {
       <div className="relative min-h-screen overflow-x-hidden" style={{ color: "var(--clr-text)" }}>
       <BootSplash />
 
-      {/* Background ville la nuit — fixed, visible sur TOUTE la landing */}
-      <CityNightHero />
+      {/* Vue aérienne top-down — canvas procédural, fixed sur toute la landing */}
+      <AerialCityCanvas />
 
       <div id="scroll-progress" aria-hidden="true" />
 
