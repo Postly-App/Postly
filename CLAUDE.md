@@ -64,9 +64,11 @@ Post CRUD helpers are in `src/lib/db/posts.ts`. Always pass `userId` alongside `
 
 ### Social publishing (`src/lib/social/index.ts`)
 
-`publishPost(postId, userId)` is the entry point called from `POST /api/posts/[id]/publish`. It looks up the post, finds matching `SocialAccount` rows, and iterates over platforms. **The actual platform API calls are not yet implemented** — each branch is a TODO stub. After iterating, it calls `updatePostStatus()` to mark the post `PUBLISHED` or `FAILED`.
+`publishPost(postId, userId)` is the entry point called from `POST /api/posts/[id]/publish`. It atomically claims the post (PROCESSING lock via `claimPostForPublishing`), looks up matching `SocialAccount` rows by canonical platform, dispatches to per-platform publishers in `src/lib/social/publish/orchestrator.ts`, and updates final status to `PUBLISHED` or `FAILED`.
 
-When wiring up a real platform, add a case inside the `try` block in `src/lib/social/index.ts`.
+Per-platform publishers live in `src/lib/social/publish/providers/` — all seven implemented: Twitter, Facebook (Page), LinkedIn (Member), Instagram (Business), Threads, TikTok, YouTube. Tokens decrypted via `social-token-crypto.ts` (AES-256-GCM, key from `SOCIAL_TOKEN_ENCRYPTION_KEY`).
+
+To add a platform: write a `publishX(account, ctx)` provider, register in `runPlatformPublish`, and add to `AUTO_PUBLISH_PLATFORMS`.
 
 ### Billing (`src/lib/stripe.ts`)
 
