@@ -712,3 +712,221 @@ body.cursor-down #cursor-ring {
   box-shadow: 0 0 0 3px rgba(124,92,252,0.2);
 }
 .form-input::placeholder { color: rgba(155,153,181,0.5); }
+
+/* ═══════════════════════════════════════════════════════════
+   CYBERPUNK — SCANLINES OVERLAY (subtile, parcimonieuse)
+═══════════════════════════════════════════════════════════ */
+.scanlines-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+  opacity: 0.35;
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(99, 102, 241, 0.025) 0px,
+    rgba(99, 102, 241, 0.025) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  mix-blend-mode: overlay;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scanlines-overlay { display: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CYBERPUNK — CURSOR GLOW (gros halo radial qui suit le curseur)
+═══════════════════════════════════════════════════════════ */
+.cursor-glow-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  mix-blend-mode: screen;
+  opacity: 0.5;
+  transition: opacity 0.3s ease;
+}
+
+@media (hover: none) or (pointer: coarse) {
+  .cursor-glow-layer { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cursor-glow-layer { display: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   NEON TEXT — glow + halo + chromatic shift (subtle, level 2)
+═══════════════════════════════════════════════════════════ */
+.neon-text {
+  background: linear-gradient(135deg, #818CF8 0%, #C084FC 50%, #F472B6 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  position: relative;
+  filter: drop-shadow(0 0 24px rgba(192, 132, 252, 0.35));
+}
+
+.neon-text-cyan {
+  background: linear-gradient(135deg, #67E8F9 0%, #818CF8 60%, #C084FC 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 24px rgba(34, 211, 238, 0.35));
+}
+
+/* Chromatic aberration sur hover/scroll (very subtle) */
+@keyframes chroma-shift {
+  0%, 100% { text-shadow: none; }
+  50% {
+    text-shadow:
+      -0.5px 0 0 rgba(244, 114, 182, 0.4),
+      0.5px 0 0 rgba(34, 211, 238, 0.4);
+  }
+}
+
+.chroma-on-hover:hover {
+  animation: chroma-shift 0.6s ease-in-out;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   GLASS CARD — backdrop-filter standardisé + bordure néon
+═══════════════════════════════════════════════════════════ */
+.glass-card {
+  position: relative;
+  background: linear-gradient(180deg, rgba(14, 16, 24, 0.72), rgba(11, 13, 20, 0.88));
+  border: 1px solid var(--line-2);
+  border-radius: 20px;
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  box-shadow:
+    0 1px 0 0 rgba(255, 255, 255, 0.05) inset,
+    0 24px 48px -16px rgba(0, 0, 0, 0.55),
+    0 8px 16px -8px rgba(0, 0, 0, 0.4);
+  transition: border-color 0.3s var(--ease-out-quart), box-shadow 0.3s var(--ease-out-quart), transform 0.3s var(--ease-out-quart);
+}
+
+.glass-card:hover {
+  border-color: rgba(99, 102, 241, 0.32);
+  box-shadow:
+    0 1px 0 0 rgba(255, 255, 255, 0.07) inset,
+    0 24px 48px -16px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(99, 102, 241, 0.12),
+    0 0 48px -8px rgba(99, 102, 241, 0.3);
+}
+
+/* Bordure néon animée (subtle, level 2) */
+.glass-card-neon::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0) 0%,
+    rgba(99, 102, 241, 0.5) 25%,
+    rgba(192, 132, 252, 0.5) 50%,
+    rgba(244, 114, 182, 0.5) 75%,
+    rgba(99, 102, 241, 0) 100%
+  );
+  background-size: 200% 200%;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+  animation: neon-border-flow 6s linear infinite;
+}
+
+.glass-card-neon:hover::before {
+  opacity: 1;
+}
+
+@keyframes neon-border-flow {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 200% 0%; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   GLOW BUTTON — bouton avec glow trail au hover
+═══════════════════════════════════════════════════════════ */
+.glow-btn {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  transition: transform 0.2s var(--ease-out-quart), box-shadow 0.3s var(--ease-out-quart);
+}
+
+.glow-btn::after {
+  content: '';
+  position: absolute;
+  inset: -50%;
+  background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255, 255, 255, 0.18), transparent 40%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.glow-btn:hover::after { opacity: 1; }
+.glow-btn:hover { transform: translateY(-1px); }
+.glow-btn:active { transform: translateY(0); }
+
+/* ═══════════════════════════════════════════════════════════
+   FOCUS MODAL — wrapper du card focus mode (layoutId)
+═══════════════════════════════════════════════════════════ */
+.focus-modal-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  pointer-events: none;
+}
+
+.focus-modal-wrap > * { pointer-events: auto; }
+
+.focus-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 7, 11, 0.65);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  z-index: 9999;
+}
+
+body.focus-locked { overflow: hidden; }
+
+/* ═══════════════════════════════════════════════════════════
+   GRADIENT TEXT NEON — sur SectionTitle
+═══════════════════════════════════════════════════════════ */
+.grad-text-neon {
+  background: linear-gradient(135deg, #fff 20%, #818CF8 60%, #C084FC 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 32px rgba(192, 132, 252, 0.25));
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SECTION DIVIDER — fine ligne avec glow néon
+═══════════════════════════════════════════════════════════ */
+.neon-divider {
+  height: 1px;
+  width: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(99, 102, 241, 0.4) 40%,
+    rgba(192, 132, 252, 0.6) 50%,
+    rgba(244, 114, 182, 0.4) 60%,
+    transparent 100%
+  );
+  filter: drop-shadow(0 0 8px rgba(192, 132, 252, 0.4));
+}

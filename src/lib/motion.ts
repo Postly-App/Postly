@@ -144,3 +144,69 @@ export const hoverScale = {
   whileHover: { scale: 1.02, transition: tx.fast },
   whileTap: { scale: 0.97, transition: tx.fast },
 }
+
+/* ─────────────────────────────────────────────
+   CYBERPUNK / NEON — premium futurist
+   ───────────────────────────────────────────── */
+
+/** Backdrop pour le focus mode (blur progressif + scrim). */
+export const focusBackdrop: Variants = {
+  hidden: { opacity: 0, backdropFilter: "blur(0px)" },
+  visible: {
+    opacity: 1,
+    backdropFilter: "blur(20px)",
+    transition: { duration: DUR.med, ease: EASE.outQuart },
+  },
+  exit: {
+    opacity: 0,
+    backdropFilter: "blur(0px)",
+    transition: { duration: DUR.base, ease: EASE.outQuart },
+  },
+}
+
+/** Card morphing — utilisé avec layoutId. La transition de layout est gérée par framer. */
+export const focusedCard: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: DUR.med, ease: EASE.outExpo, delay: 0.05 },
+  },
+  exit: {
+    opacity: 0,
+    y: -10,
+    transition: { duration: DUR.base, ease: EASE.outQuart },
+  },
+}
+
+/** Pulse néon — décoration de bordure/glow qui respire. */
+export const neonPulse: Variants = {
+  initial: { opacity: 0.4 },
+  animate: {
+    opacity: [0.4, 1, 0.4],
+    transition: {
+      duration: 3.2,
+      ease: EASE.inOut,
+      repeat: Infinity,
+    },
+  },
+}
+
+/** Animation d'entrée d'un titre néon — fade + shift latéral imperceptible. */
+export const neonTitleIn: Variants = {
+  hidden: { opacity: 0, x: -4, filter: "blur(8px)" },
+  visible: {
+    opacity: 1,
+    x: 0,
+    filter: "blur(0px)",
+    transition: { duration: DUR.slow, ease: EASE.outExpo },
+  },
+}
+
+/** Glow trail — pour un curseur ou particle qui suit le mouvement. */
+export const glowTrail = {
+  type: "spring" as const,
+  stiffness: 280,
+  damping: 28,
+  mass: 0.6,
+}
