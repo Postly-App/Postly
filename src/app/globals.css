@@ -732,7 +732,8 @@ body.cursor-down #cursor-ring {
   mix-blend-mode: overlay;
 }
 
-@media (prefers-reduced-motion: reduce) {
+@media (prefers-reduced-motion: reduce),
+       (hover: none) and (pointer: coarse) {
   .scanlines-overlay { display: none; }
 }
 

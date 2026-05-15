@@ -11,7 +11,7 @@ import BootSplash from "@/components/cinematic/BootSplash";
 import LenisProvider from "@/components/cinematic/LenisProvider";
 import CustomCursor from "@/components/cinematic/CustomCursor";
 import LandingChatWidget from "@/components/landing/LandingChatWidget";
-import AerialCityCanvas from "@/components/landing/AerialCityCanvas";
+import CityVideoBackground from "@/components/landing/CityVideoBackground";
 import HeroPhoneMockup from "@/components/landing/HeroPhoneMockup";
 import HeroStatsBar from "@/components/landing/HeroStatsBar";
 import FocusableCard from "@/components/landing/primitives/FocusableCard";
@@ -38,8 +38,8 @@ export default function HomePage() {
       <div className="relative min-h-screen overflow-x-hidden" style={{ color: "var(--clr-text)" }}>
       <BootSplash />
 
-      {/* Vue aérienne top-down — canvas procédural, fixed sur toute la landing */}
-      <AerialCityCanvas />
+      {/* Vue aérienne ville nuit — vidéo self-hostée avec poster LCP-instant */}
+      <CityVideoBackground />
 
       {/* Cyberpunk overlays — scanlines + halo curseur */}
       <CursorGlow />
