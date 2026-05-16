@@ -39,7 +39,7 @@ export default function LandingChatWidget() {
       setMsgs((m) => [...m, { role: "assistant", content: j.reply ?? "" }]);
     } catch {
       setErr("Réseau");
-      setMsgs((m) => [...m, { role: "assistant", content: "Impossible de joindre le serveur. Réessayez ou écrivez à postlyservice@gmail.com" }]);
+      setMsgs((m) => [...m, { role: "assistant", content: "Impossible de joindre le serveur. Réessayez ou écrivez à support@getpostly.space" }]);
     } finally {
       setLoading(false);
       scrollEnd();
@@ -83,7 +83,7 @@ export default function LandingChatWidget() {
           <div style={{ flex: 1, overflowY: "auto", padding: 12, display: "flex", flexDirection: "column", gap: 10 }}>
             {msgs.length === 0 && (
               <p style={{ color: "var(--clr-muted)", fontSize: "0.88rem", lineHeight: 1.6, margin: 8 }}>
-                Posez vos questions sur Postly (fonctionnalités, tarifs, prise en main). Support humain : postlyservice@gmail.com
+                Posez vos questions sur Postly (fonctionnalités, tarifs, prise en main). Support humain : support@getpostly.space
               </p>
             )}
             {msgs.map((m, i) => (

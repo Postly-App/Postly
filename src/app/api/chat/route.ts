@@ -10,9 +10,9 @@ export const maxDuration = 30
 const GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 const DEFAULT_MODEL = "llama-3.3-70b-versatile"
 const FALLBACK_REPLY =
-  "Désolé, le service IA est momentanément indisponible. Tu peux écrire à postlyservice@gmail.com en attendant."
+  "Désolé, le service IA est momentanément indisponible. Tu peux écrire à support@getpostly.space en attendant."
 
-const SYSTEM = `Tu es l'assistant virtuel de Postly, un SaaS de gestion et publication de contenu sur les réseaux sociaux. Tu réponds aux questions des visiteurs sur les fonctionnalités, les tarifs et l'utilisation de Postly. Tu es professionnel, concis et bienveillant. Tu ne réponds pas aux questions hors sujet. Si tu ne sais pas, tu invites l'utilisateur à contacter le support : postlyservice@gmail.com`
+const SYSTEM = `Tu es l'assistant virtuel de Postly, un SaaS de gestion et publication de contenu sur les réseaux sociaux. Tu réponds aux questions des visiteurs sur les fonctionnalités, les tarifs et l'utilisation de Postly. Tu es professionnel, concis et bienveillant. Tu ne réponds pas aux questions hors sujet. Si tu ne sais pas, tu invites l'utilisateur à contacter le support : support@getpostly.space`
 
 export async function POST(req: Request) {
   const ip = getClientIp(req) ?? "unknown"

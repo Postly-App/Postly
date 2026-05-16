@@ -5,7 +5,7 @@ import { logger } from "@/lib/logger";
 
 export const runtime = "nodejs";
 
-const TO = "postlyservice@gmail.com";
+const TO = "support@getpostly.space";
 const FROM = process.env.RESEND_FROM ?? "Postly <onboarding@resend.dev>";
 
 function getResend() {

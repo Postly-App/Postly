@@ -9,7 +9,7 @@ const SECTIONS: Array<{ title: string; paragraphs: string[] }> = [
   {
     title: "1. Responsable du traitement",
     paragraphs: [
-      "Le responsable du traitement de vos données personnelles est Postly. Pour toute question : postlyservice@gmail.com.",
+      "Le responsable du traitement de vos données personnelles est Postly. Pour toute question : support@getpostly.space.",
     ],
   },
   {
@@ -70,7 +70,7 @@ const SECTIONS: Array<{ title: string; paragraphs: string[] }> = [
       "Droit d'accès et de portabilité : vous pouvez exporter une copie de vos données depuis l'espace Paramètres → Mes données, ou en nous écrivant.",
       "Droit de rectification : vous pouvez corriger votre nom et email depuis votre profil.",
       "Droit à l'effacement : vous pouvez supprimer définitivement votre compte depuis l'espace Paramètres → Mes données. Cette action supprime également vos posts, jetons sociaux et historique d'analytics.",
-      "Droit d'opposition et de limitation : écrivez-nous à postlyservice@gmail.com.",
+      "Droit d'opposition et de limitation : écrivez-nous à support@getpostly.space.",
       "Vous pouvez à tout moment introduire une réclamation auprès de la CNIL (www.cnil.fr).",
     ],
   },

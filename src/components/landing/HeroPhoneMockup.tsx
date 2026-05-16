@@ -1,12 +1,12 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Rocket, Zap } from "lucide-react"
+import { Sparkles, Calendar, ChevronLeft, ImageIcon, Hash, Check } from "lucide-react"
 import { EASE } from "@/lib/motion"
 
 /**
- * Mockup iPhone — purement CSS/SVG, pas d'image.
- * Représente la même landing sur mobile = preuve que Postly est responsive.
+ * Mockup iPhone — affiche un vrai écran composer Postly (mock du produit, pas
+ * de la landing). Tout est rendu en pur CSS/SVG, aucune image externe.
  */
 export default function HeroPhoneMockup() {
   return (
@@ -102,177 +102,277 @@ export default function HeroPhoneMockup() {
               background: "#000",
             }} />
 
-            {/* Mini nav */}
+            {/* Header : back arrow + title + save */}
             <div style={{
               display: "flex",
-              justifyContent: "space-between",
               alignItems: "center",
-              padding: "16px 18px 14px",
+              justifyContent: "space-between",
+              padding: "20px 16px 14px",
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <PostlyLogo size={20} />
-                <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-1)", letterSpacing: "-0.02em" }}>
-                  Postly
-                </span>
+                <ChevronLeft size={16} strokeWidth={2.2} color="var(--text-2)" />
+                <span style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--text-2)" }}>Retour</span>
               </div>
-              <div style={{
-                width: 22, height: 18,
-                display: "flex", flexDirection: "column", justifyContent: "space-between",
-              }}>
-                <div style={{ width: "100%", height: 1.5, background: "var(--text-1)", borderRadius: 1 }} />
-                <div style={{ width: "100%", height: 1.5, background: "var(--text-1)", borderRadius: 1 }} />
-                <div style={{ width: "100%", height: 1.5, background: "var(--text-1)", borderRadius: 1 }} />
-              </div>
-            </div>
-
-            {/* Badge */}
-            <div style={{ padding: "0 18px", marginBottom: 14 }}>
-              <div style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 5,
-                padding: "3px 8px",
-                borderRadius: 99,
-                background: "rgba(99,102,241,0.14)",
-                border: "1px solid rgba(99,102,241,0.30)",
-                fontSize: "0.55rem",
+              <span style={{
+                fontSize: "0.74rem",
                 fontWeight: 600,
                 color: "#A5B4FC",
-                letterSpacing: "0.04em",
+                padding: "3px 9px",
+                background: "rgba(99,102,241,0.14)",
+                border: "1px solid rgba(99,102,241,0.28)",
+                borderRadius: 8,
+              }}>Brouillon</span>
+            </div>
+
+            {/* Title section */}
+            <div style={{ padding: "0 16px 14px" }}>
+              <div style={{
+                fontSize: "0.62rem",
+                fontWeight: 600,
+                color: "var(--text-3)",
+                letterSpacing: "0.06em",
                 textTransform: "uppercase",
+                marginBottom: 5,
               }}>
-                <span style={{
-                  width: 4, height: 4, borderRadius: "50%",
-                  background: "#34D399",
-                  boxShadow: "0 0 6px #34D399",
-                }} />
-                La plateforme n°1
+                Nouveau post
+              </div>
+              <h3 style={{
+                fontSize: "1rem",
+                fontWeight: 700,
+                color: "var(--text-1)",
+                lineHeight: 1.2,
+                letterSpacing: "-0.02em",
+              }}>
+                Publier sur 4 réseaux
+              </h3>
+            </div>
+
+            {/* Platform pills */}
+            <div style={{ padding: "0 16px 12px", display: "flex", gap: 6 }}>
+              <PlatformPill label="IG" color="#F472B6" selected />
+              <PlatformPill label="TT" color="#67E8F9" selected />
+              <PlatformPill label="LI" color="#60A5FA" selected />
+              <PlatformPill label="X" color="#94A3B8" selected />
+            </div>
+
+            {/* Composer textarea */}
+            <div style={{
+              margin: "0 16px 10px",
+              padding: "10px 12px",
+              borderRadius: 10,
+              background: "rgba(255,255,255,0.025)",
+              border: "1px solid var(--line-2)",
+              minHeight: 78,
+              position: "relative",
+            }}>
+              <div style={{
+                fontSize: "0.62rem",
+                color: "var(--text-1)",
+                lineHeight: 1.5,
+                fontFamily: "var(--font-sans)",
+              }}>
+                Lancement de notre collection automne — pièces en lin
+                local, livraison offerte cette semaine.
+              </div>
+              <div style={{
+                marginTop: 6,
+                fontSize: "0.6rem",
+                color: "#A5B4FC",
+                lineHeight: 1.4,
+              }}>
+                #automne #modeFR #fabriquéenfrance
+              </div>
+              {/* Caret blink */}
+              <motion.span
+                aria-hidden="true"
+                animate={{ opacity: [1, 0, 1] }}
+                transition={{ duration: 1.1, repeat: Infinity, ease: "linear" }}
+                style={{
+                  position: "absolute",
+                  bottom: 12,
+                  right: 12,
+                  width: 1.5,
+                  height: 9,
+                  background: "#818CF8",
+                  borderRadius: 1,
+                }}
+              />
+            </div>
+
+            {/* AI suggestion */}
+            <div style={{
+              margin: "0 16px 10px",
+              padding: "8px 10px",
+              borderRadius: 9,
+              background: "linear-gradient(135deg, rgba(124,92,252,0.14), rgba(192,132,252,0.08))",
+              border: "1px solid rgba(192,132,252,0.30)",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+            }}>
+              <Sparkles size={11} strokeWidth={1.75} color="#C4B5FD" />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: "0.6rem", fontWeight: 600, color: "var(--text-1)", lineHeight: 1.3 }}>
+                  Suggestion IA
+                </div>
+                <div style={{ fontSize: "0.55rem", color: "var(--text-3)", lineHeight: 1.3, marginTop: 1 }}>
+                  Renforce l&apos;accroche par une question ?
+                </div>
+              </div>
+              <span style={{
+                fontSize: "0.55rem", fontWeight: 600,
+                color: "#C4B5FD",
+                padding: "2px 6px",
+                background: "rgba(192,132,252,0.14)",
+                borderRadius: 6,
+              }}>Appliquer</span>
+            </div>
+
+            {/* Media row */}
+            <div style={{ padding: "0 16px 10px", display: "flex", gap: 6 }}>
+              <MediaThumb gradient="linear-gradient(135deg, #FB923C 0%, #F472B6 100%)" />
+              <MediaThumb gradient="linear-gradient(135deg, #818CF8 0%, #67E8F9 100%)" />
+              <div style={{
+                width: 48, height: 48, borderRadius: 8,
+                border: "1px dashed var(--line-3)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                color: "var(--text-3)",
+              }}>
+                <ImageIcon size={14} strokeWidth={1.5} />
               </div>
             </div>
 
-            {/* Titre */}
-            <div style={{ padding: "0 18px", marginBottom: 10 }}>
-              <h2 style={{
-                fontSize: "1.4rem",
-                fontWeight: 700,
-                color: "var(--text-1)",
-                lineHeight: 1.05,
-                letterSpacing: "-0.035em",
-                marginBottom: 4,
+            {/* Hashtag chip + count */}
+            <div style={{ padding: "0 16px 12px", display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{
+                display: "inline-flex", alignItems: "center", gap: 4,
+                padding: "3px 7px",
+                background: "rgba(34,211,238,0.12)",
+                border: "1px solid rgba(34,211,238,0.28)",
+                borderRadius: 99,
+                fontSize: "0.55rem", fontWeight: 600,
+                color: "#67E8F9",
               }}>
-                Publiez. Analysez.
-              </h2>
-              <h2 style={{
-                fontSize: "1.4rem",
-                fontWeight: 700,
-                lineHeight: 1.05,
-                letterSpacing: "-0.035em",
-                background: "linear-gradient(135deg, #818CF8 0%, #C084FC 100%)",
-                WebkitBackgroundClip: "text",
-                backgroundClip: "text",
-                color: "transparent",
-              }}>
-                Développez.
-              </h2>
+                <Hash size={9} strokeWidth={2} />
+                12 suggérés
+              </div>
+              <span style={{ fontSize: "0.55rem", color: "var(--text-3)", marginLeft: "auto" }}>
+                148 / 280
+              </span>
             </div>
 
-            {/* Subtitle */}
-            <p style={{
-              padding: "0 18px",
-              fontSize: "0.62rem",
-              color: "var(--text-3)",
-              lineHeight: 1.5,
-              marginBottom: 14,
+            {/* Schedule + CTA */}
+            <div style={{
+              position: "absolute",
+              bottom: 14,
+              left: 14,
+              right: 14,
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
             }}>
-              Gérez tous vos réseaux sociaux depuis une seule plateforme. Gagnez du temps, créez du contenu incroyable.
-            </p>
+              <div style={{
+                display: "flex", alignItems: "center", gap: 8,
+                padding: "8px 10px",
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid var(--line-2)",
+                borderRadius: 9,
+              }}>
+                <Calendar size={11} strokeWidth={1.75} color="var(--text-2)" />
+                <div style={{ flex: 1, fontSize: "0.6rem", color: "var(--text-2)" }}>
+                  Jeudi 16 mai · 14:30
+                </div>
+                <span style={{
+                  fontSize: "0.55rem", fontWeight: 600,
+                  color: "#A5B4FC",
+                }}>Modifier</span>
+              </div>
 
-            {/* CTAs */}
-            <div style={{ padding: "0 18px", display: "flex", flexDirection: "column", gap: 7, marginBottom: 14 }}>
               <button style={{
                 width: "100%",
-                padding: "8px 12px",
-                borderRadius: 9,
+                padding: "9px 12px",
+                borderRadius: 10,
                 border: "none",
                 background: "linear-gradient(180deg, #6366F1 0%, #4F46E5 100%)",
                 color: "#fff",
-                fontSize: "0.65rem",
-                fontWeight: 600,
+                fontSize: "0.72rem",
+                fontWeight: 700,
                 letterSpacing: "-0.005em",
-                boxShadow: "0 1px 0 rgba(255,255,255,0.15) inset",
+                boxShadow:
+                  "0 1px 0 rgba(255,255,255,0.18) inset, " +
+                  "0 8px 22px -6px rgba(79,70,229,0.55)",
                 cursor: "pointer",
                 fontFamily: "var(--font-sans)",
               }}>
-                Commencer gratuitement
+                Programmer la publication
               </button>
-              <button style={{
-                width: "100%",
-                padding: "8px 12px",
-                borderRadius: 9,
-                border: "1px solid var(--line-2)",
-                background: "rgba(180,200,255,0.04)",
-                color: "var(--text-2)",
-                fontSize: "0.65rem",
-                fontWeight: 500,
-                cursor: "pointer",
-                fontFamily: "var(--font-sans)",
-              }}>
-                Voir une démo
-              </button>
-            </div>
-
-            {/* Mini stats card */}
-            <div style={{
-              margin: "0 14px",
-              padding: 10,
-              background: "var(--surface-3)",
-              border: "1px solid var(--line-2)",
-              borderRadius: 12,
-              marginBottom: 8,
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-            }}>
-              <div style={{
-                width: 26, height: 26, borderRadius: 7,
-                background: "rgba(99,102,241,0.16)",
-                border: "1px solid rgba(99,102,241,0.30)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>
-                <Rocket size={12} strokeWidth={1.75} color="#A5B4FC" />
-              </div>
-              <div>
-                <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--text-1)" }}>+25%</div>
-                <div style={{ fontSize: "0.55rem", color: "var(--text-3)" }}>Engagement moyen</div>
-              </div>
-            </div>
-            <div style={{
-              margin: "0 14px",
-              padding: 10,
-              background: "var(--surface-3)",
-              border: "1px solid var(--line-2)",
-              borderRadius: 12,
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-            }}>
-              <div style={{
-                width: 26, height: 26, borderRadius: 7,
-                background: "rgba(6,182,212,0.16)",
-                border: "1px solid rgba(6,182,212,0.30)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>
-                <Zap size={12} strokeWidth={1.75} color="#67E8F9" />
-              </div>
-              <div>
-                <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--text-1)" }}>10x</div>
-                <div style={{ fontSize: "0.55rem", color: "var(--text-3)" }}>Plus rapide</div>
-              </div>
             </div>
           </div>
         </div>
       </motion.div>
     </motion.div>
+  )
+}
+
+/* ─── pills + thumbnails ─── */
+function PlatformPill({ label, color, selected }: { label: string; color: string; selected?: boolean }) {
+  return (
+    <div style={{
+      flex: 1,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 4,
+      height: 26,
+      borderRadius: 8,
+      background: selected ? `${color}1A` : "rgba(255,255,255,0.03)",
+      border: `1px solid ${selected ? color + "55" : "var(--line-2)"}`,
+      color: selected ? color : "var(--text-3)",
+      fontSize: "0.6rem",
+      fontWeight: 700,
+      letterSpacing: "0.04em",
+      position: "relative",
+    }}>
+      {label}
+      {selected && (
+        <span style={{
+          position: "absolute",
+          top: -3,
+          right: -3,
+          width: 11,
+          height: 11,
+          borderRadius: "50%",
+          background: color,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          boxShadow: `0 0 8px ${color}88`,
+        }}>
+          <Check size={7} strokeWidth={3} color="#06070B" />
+        </span>
+      )}
+    </div>
+  )
+}
+
+function MediaThumb({ gradient }: { gradient: string }) {
+  return (
+    <div style={{
+      width: 48,
+      height: 48,
+      borderRadius: 8,
+      background: gradient,
+      boxShadow: "0 4px 12px -2px rgba(0,0,0,0.5)",
+      position: "relative",
+    }}>
+      <div style={{
+        position: "absolute",
+        inset: 0,
+        borderRadius: 8,
+        border: "1px solid rgba(255,255,255,0.18)",
+        background: "linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%)",
+      }} />
+    </div>
   )
 }
 
@@ -305,19 +405,3 @@ function BatteryIcon() {
     </svg>
   )
 }
-function PostlyLogo({ size = 22 }: { size?: number }) {
-  return (
-    <div style={{
-      width: size, height: size, borderRadius: 7,
-      background: "linear-gradient(135deg, #6366F1, #4F46E5)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      boxShadow: "0 0 12px rgba(99,102,241,0.5)",
-    }}>
-      <svg width={size * 0.6} height={size * 0.6} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5">
-        <circle cx="12" cy="12" r="3" />
-        <circle cx="12" cy="12" r="9" strokeOpacity="0.5" />
-      </svg>
-    </div>
-  )
-}
-

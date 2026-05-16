@@ -23,7 +23,7 @@ const SECTIONS: Array<{ title: string; paragraphs: string[] }> = [
   {
     title: "3. Compte utilisateur",
     paragraphs: [
-      "Vous êtes responsable de la confidentialité de votre mot de passe et de toute activité réalisée sous votre compte. Vous devez nous notifier sans délai à postlyservice@gmail.com en cas d'accès non autorisé.",
+      "Vous êtes responsable de la confidentialité de votre mot de passe et de toute activité réalisée sous votre compte. Vous devez nous notifier sans délai à support@getpostly.space en cas d'accès non autorisé.",
       "Vous garantissez avoir au moins 18 ans et avoir la capacité légale de contracter.",
     ],
   },
@@ -87,7 +87,7 @@ const SECTIONS: Array<{ title: string; paragraphs: string[] }> = [
   {
     title: "12. Contact",
     paragraphs: [
-      "Pour toute question relative aux CGU ou au Service : postlyservice@gmail.com",
+      "Pour toute question relative aux CGU ou au Service : support@getpostly.space",
     ],
   },
 ];

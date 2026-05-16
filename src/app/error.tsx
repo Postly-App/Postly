@@ -49,7 +49,7 @@ export default function Error({
         </h1>
         <p style={{ color: "#9B99B5", fontSize: "0.95rem", lineHeight: 1.6, marginBottom: 24 }}>
           On a eu un souci pour afficher cette page. Tu peux réessayer ou retourner à l&apos;accueil.
-          Si le problème persiste, écris-nous à <a href="mailto:postlyservice@gmail.com" style={{ color: "#9B82FD" }}>postlyservice@gmail.com</a>.
+          Si le problème persiste, écris-nous à <a href="mailto:support@getpostly.space" style={{ color: "#9B82FD" }}>support@getpostly.space</a>.
         </p>
         {error.digest && (
           <p style={{ color: "#5C5A75", fontSize: "0.72rem", fontFamily: "monospace", marginBottom: 20 }}>

@@ -3,7 +3,7 @@
 import { useState, type CSSProperties } from "react";
 import Link from "next/link";
 
-const SUPPORT = "postlyservice@gmail.com";
+const SUPPORT = "support@getpostly.space";
 
 export default function ContactPage() {
   const [status, setStatus] = useState<"idle" | "loading" | "ok" | "err">("idle");

@@ -1,53 +1,23 @@
 "use client"
 
-import { motion, useInView, useMotionValue, useTransform, animate } from "framer-motion"
-import { Rocket, Zap, Clock, ShieldCheck } from "lucide-react"
-import { useEffect, useRef } from "react"
+import { motion } from "framer-motion"
+import { CalendarClock, Sparkles, LineChart, ShieldCheck } from "lucide-react"
 import { EASE } from "@/lib/motion"
 
-interface Stat {
+interface Highlight {
   Icon: React.ComponentType<{ size?: number; strokeWidth?: number; color?: string }>
-  value: number
-  prefix?: string
-  suffix?: string
-  decimals?: number
-  label: string
+  title: string
+  sub: string
   tint: string
   border: string
 }
 
-const STATS: Stat[] = [
-  { Icon: Rocket,      value: 25,   prefix: "+", suffix: "%",                label: "Engagement moyen",   tint: "rgba(99,102,241,0.14)",  border: "rgba(99,102,241,0.28)" },
-  { Icon: Zap,         value: 10,                suffix: "x",                label: "Publication plus rapide", tint: "rgba(192,132,252,0.14)", border: "rgba(192,132,252,0.28)" },
-  { Icon: Clock,       value: 14,                suffix: " h/sem",           label: "De temps économisé", tint: "rgba(244,114,182,0.12)", border: "rgba(244,114,182,0.28)" },
-  { Icon: ShieldCheck, value: 99.9,              suffix: "%", decimals: 1,   label: "Uptime garanti",     tint: "rgba(52,211,153,0.12)",  border: "rgba(52,211,153,0.28)" },
+const HIGHLIGHTS: Highlight[] = [
+  { Icon: CalendarClock, title: "Multi-réseaux",     sub: "7 plateformes supportées",  tint: "rgba(99,102,241,0.14)",  border: "rgba(99,102,241,0.28)" },
+  { Icon: Sparkles,      title: "Assistant IA",      sub: "Légendes & hashtags",       tint: "rgba(192,132,252,0.14)", border: "rgba(192,132,252,0.28)" },
+  { Icon: LineChart,     title: "Analytics",         sub: "Dashboard unifié",          tint: "rgba(244,114,182,0.12)", border: "rgba(244,114,182,0.28)" },
+  { Icon: ShieldCheck,   title: "Hébergé en Europe", sub: "Conforme RGPD",             tint: "rgba(52,211,153,0.12)",  border: "rgba(52,211,153,0.28)" },
 ]
-
-function AnimatedNumber({ value, decimals = 0, prefix = "", suffix = "" }: { value: number; decimals?: number; prefix?: string; suffix?: string }) {
-  const ref = useRef<HTMLSpanElement>(null)
-  const inView = useInView(ref, { once: true, amount: 0.5 })
-  const motionVal = useMotionValue(0)
-  const display = useTransform(motionVal, (latest) => {
-    const formatted = latest.toFixed(decimals)
-    const n = Number(formatted)
-    // 1000 → "2,500" style
-    if (n >= 1000 && decimals === 0) {
-      return prefix + n.toLocaleString("fr-FR") + suffix
-    }
-    return prefix + formatted.replace(".", ",") + suffix
-  })
-
-  useEffect(() => {
-    if (!inView) return
-    const controls = animate(motionVal, value, {
-      duration: 1.6,
-      ease: [0.22, 1, 0.36, 1],
-    })
-    return () => controls.stop()
-  }, [inView, motionVal, value])
-
-  return <motion.span ref={ref}>{display}</motion.span>
-}
 
 export default function HeroStatsBar() {
   return (
@@ -81,9 +51,9 @@ export default function HeroStatsBar() {
             "0 0 0 1px rgba(99,102,241,0.05)",
         }}
       >
-        {STATS.map((s, i) => (
+        {HIGHLIGHTS.map((h, i) => (
           <div
-            key={s.label}
+            key={h.title}
             style={{
               display: "flex",
               alignItems: "center",
@@ -97,8 +67,8 @@ export default function HeroStatsBar() {
                 width: 38,
                 height: 38,
                 borderRadius: 10,
-                background: s.tint,
-                border: `1px solid ${s.border}`,
+                background: h.tint,
+                border: `1px solid ${h.border}`,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -106,25 +76,20 @@ export default function HeroStatsBar() {
                 boxShadow: "0 1px 0 0 rgba(255,255,255,0.05) inset",
               }}
             >
-              <s.Icon size={17} strokeWidth={1.75} color="var(--text-1)" />
+              <h.Icon size={17} strokeWidth={1.75} color="var(--text-1)" />
             </div>
             <div style={{ minWidth: 0 }}>
               <div
                 style={{
-                  fontSize: "1.3rem",
+                  fontSize: "1.05rem",
                   fontWeight: 700,
                   color: "var(--text-1)",
-                  letterSpacing: "-0.025em",
-                  lineHeight: 1.1,
+                  letterSpacing: "-0.02em",
+                  lineHeight: 1.15,
                   fontFamily: "var(--font-sans)",
                 }}
               >
-                <AnimatedNumber
-                  value={s.value}
-                  decimals={s.decimals ?? 0}
-                  prefix={s.prefix}
-                  suffix={s.suffix}
-                />
+                {h.title}
               </div>
               <div
                 style={{
@@ -134,7 +99,7 @@ export default function HeroStatsBar() {
                   letterSpacing: "-0.005em",
                 }}
               >
-                {s.label}
+                {h.sub}
               </div>
             </div>
           </div>

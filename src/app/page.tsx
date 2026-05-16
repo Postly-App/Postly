@@ -228,7 +228,7 @@ function HeroSection() {
               }}
             >
               <Play size={11} fill="#A5B4FC" strokeWidth={0} />
-              La plateforme n°1 pour vos réseaux sociaux
+              Programmation multi-réseaux · Assistant IA inclus
             </motion.div>
 
             {/* H1 — Neon text avec drop-shadow glow */}
@@ -266,9 +266,10 @@ function HeroSection() {
                 letterSpacing: "-0.005em",
               }}
             >
-              Gérez tous vos réseaux sociaux depuis une seule plateforme.
-              Gagnez du temps, créez du contenu incroyable et développez
-              votre audience comme jamais.
+              Programmez vos contenus, générez vos légendes avec l&apos;IA
+              et suivez vos performances sur 7 réseaux — depuis une seule
+              interface, pensée pour les créateurs, freelances et équipes
+              marketing.
             </motion.p>
 
             {/* CTAs */}
@@ -303,7 +304,7 @@ function HeroSection() {
                 <ArrowUpRight size={16} strokeWidth={2.2} />
               </MagneticLink>
               <MagneticLink
-                href="#demo"
+                href="#features"
                 strength={10}
                 style={{
                   display: "inline-flex",
@@ -1478,7 +1479,7 @@ function FooterSection() {
 
           {([
             { title: "Produit",    links: [["Tarifs", "/pricing"], ["Comparer", "/compare"], ["Connexion", "/login"], ["Inscription", "/signup"]] },
-            { title: "Ressources", links: [["Contact", "/contact"], ["Support", "mailto:postlyservice@gmail.com"]] },
+            { title: "Ressources", links: [["Contact", "/contact"], ["Support", "mailto:support@getpostly.space"]] },
             { title: "Entreprise", links: [["Confidentialité", "/privacy"], ["CGU", "/terms"]] },
           ] as const).map(({ title, links }) => (
             <div key={title}>
