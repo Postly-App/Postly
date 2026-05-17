@@ -714,6 +714,15 @@ body.cursor-down #cursor-ring {
 .form-input::placeholder { color: rgba(155,153,181,0.5); }
 
 /* ═══════════════════════════════════════════════════════════
+   COMPOSE PAGE — mobile (< 900px) : grid devient 1 colonne
+═══════════════════════════════════════════════════════════ */
+@media (max-width: 900px) {
+  .compose-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
    CYBERPUNK — SCANLINES OVERLAY (subtile, parcimonieuse)
 ═══════════════════════════════════════════════════════════ */
 .scanlines-overlay {

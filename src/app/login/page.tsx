@@ -113,35 +113,36 @@ export default function LoginPage() {
           </div>
 
           <h2 style={{ fontSize: "1.8rem", fontWeight: 800, letterSpacing: "-0.5px", marginBottom: 12 }}>
-            La croissance commence ici
+            Votre cockpit de contenu
           </h2>
           <p style={{ color: "#9B99B5", marginBottom: 40, lineHeight: 1.6, fontSize: "0.95rem" }}>
-            Des milliers de créateurs font déjà confiance à Postly pour gérer leur présence en ligne.
+            Postly centralise vos réseaux sociaux et votre workflow de contenu dans une seule interface.
           </p>
 
-          <Benefit icon="🚀" title="Planifiez sans effort" desc="Programmez des semaines de contenu en quelques minutes" />
-          <Benefit icon="📡" title="Boostez votre portée" desc="Publiez au bon moment sur chaque plateforme" />
-          <Benefit icon="⏱️" title="Gagnez du temps" desc="5+ heures économisées par semaine en moyenne" />
+          <Benefit icon="📅" title="Calendrier multi-réseaux" desc="Programmez vos posts sur 7 plateformes depuis un seul calendrier" />
+          <Benefit icon="🤖" title="Assistant IA intégré" desc="Génère vos légendes et propose des hashtags pertinents" />
+          <Benefit icon="📊" title="Analytics unifiés" desc="Suivez vos performances sur tous vos réseaux sans changer d'onglet" />
 
           <div style={{
             marginTop: 48, padding: 24,
             background: "rgba(255,255,255,0.04)",
             border: "1px solid rgba(255,255,255,0.08)",
             borderRadius: 16,
+            display: "flex", alignItems: "center", gap: 14,
           }}>
-            <blockquote style={{ fontSize: "0.9rem", lineHeight: 1.7, color: "#9B99B5", fontStyle: "italic", marginBottom: 16 }}>
-              &ldquo;Postly a complètement changé ma façon de travailler. Je gère 8 clients avec la même facilité qu&apos;un seul.&rdquo;
-            </blockquote>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{
-                width: 36, height: 36, borderRadius: "50%",
-                background: "linear-gradient(135deg,#FC5C7C,#C0204A)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontWeight: 800, fontSize: "0.75rem",
-              }}>CR</div>
-              <div>
-                <div style={{ fontWeight: 700, fontSize: "0.85rem" }}>Camille Rousseau</div>
-                <div style={{ fontSize: "0.78rem", color: "#9B99B5" }}>Directrice d&apos;agence</div>
+            <div style={{
+              width: 40, height: 40, borderRadius: 10,
+              background: "rgba(52,211,153,0.14)",
+              border: "1px solid rgba(52,211,153,0.30)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: "1.05rem", flexShrink: 0,
+            }}>🔒</div>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: "0.88rem", marginBottom: 4 }}>
+                Hébergé en Europe — conforme RGPD
+              </div>
+              <div style={{ fontSize: "0.78rem", color: "#9B99B5", lineHeight: 1.55 }}>
+                Vos données et celles de vos clients restent sur des serveurs européens.
               </div>
             </div>
           </div>

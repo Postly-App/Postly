@@ -126,35 +126,36 @@ export default function SignupPage() {
           </div>
 
           <h2 style={{ fontSize: "1.8rem", fontWeight: 800, letterSpacing: "-0.5px", marginBottom: 12 }}>
-            Rejoignez 15 000+ créateurs
+            Démarrez votre essai
           </h2>
           <p style={{ color: "#9B99B5", marginBottom: 40, lineHeight: 1.6, fontSize: "0.95rem" }}>
-            Commencez gratuitement, sans carte bancaire. Découvrez pourquoi Postly est la plateforme de référence.
+            Commencez gratuitement, sans carte bancaire. Connectez votre premier réseau social en quelques minutes.
           </p>
 
-          <Benefit icon="🎯" title="Setup en 2 minutes" desc="Connectez vos comptes et publiez immédiatement" />
-          <Benefit icon="🤖" title="IA incluse dès le départ" desc="Suggestions de contenu et hashtags automatiques" />
-          <Benefit icon="📊" title="Analytics en temps réel" desc="Suivez vos performances sur tous vos réseaux" />
+          <Benefit icon="🎯" title="Premier post en quelques minutes" desc="Connectez un réseau, rédigez et planifiez votre première publication" />
+          <Benefit icon="🤖" title="Assistant IA inclus" desc="Légendes adaptatives et suggestions de hashtags par plateforme" />
+          <Benefit icon="📊" title="Analytics centralisés" desc="Reach, engagement, croissance — tous vos réseaux au même endroit" />
 
           <div style={{
             marginTop: 48, padding: 24,
             background: "rgba(255,255,255,0.04)",
             border: "1px solid rgba(255,255,255,0.08)",
             borderRadius: 16,
+            display: "flex", alignItems: "center", gap: 14,
           }}>
-            <blockquote style={{ fontSize: "0.9rem", lineHeight: 1.7, color: "#9B99B5", fontStyle: "italic", marginBottom: 16 }}>
-              &ldquo;En 3 mois avec Postly, j&apos;ai doublé mon engagement et économisé 6 heures par semaine. La meilleure décision de mon année !&rdquo;
-            </blockquote>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{
-                width: 36, height: 36, borderRadius: "50%",
-                background: "linear-gradient(135deg,#7C5CFC,#5B3EE8)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontWeight: 800, fontSize: "0.75rem",
-              }}>SM</div>
-              <div>
-                <div style={{ fontWeight: 700, fontSize: "0.85rem" }}>Sophie Martin</div>
-                <div style={{ fontSize: "0.78rem", color: "#9B99B5" }}>Spécialiste Marketing</div>
+            <div style={{
+              width: 40, height: 40, borderRadius: 10,
+              background: "rgba(52,211,153,0.14)",
+              border: "1px solid rgba(52,211,153,0.30)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: "1.05rem", flexShrink: 0,
+            }}>🔒</div>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: "0.88rem", marginBottom: 4 }}>
+                Aucune carte requise — annulable à tout moment
+              </div>
+              <div style={{ fontSize: "0.78rem", color: "#9B99B5", lineHeight: 1.55 }}>
+                Données hébergées en Europe. Conformité RGPD.
               </div>
             </div>
           </div>

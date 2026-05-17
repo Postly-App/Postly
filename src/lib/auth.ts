@@ -79,12 +79,12 @@ export const authOptions: NextAuthOptions = {
   },
   providers: [
     GoogleProvider({
-      allowDangerousEmailAccountLinking: true,
+      // allowDangerousEmailAccountLinking removed: prevents account takeover
+      // if an attacker registers with a target's email before they OAuth-login.
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
     GitHubProvider({
-      allowDangerousEmailAccountLinking: true,
       clientId: process.env.GITHUB_CLIENT_ID!,
       clientSecret: process.env.GITHUB_CLIENT_SECRET!,
     }),

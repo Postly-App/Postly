@@ -9,6 +9,7 @@ import { toast } from "sonner";
 const PLATFORMS = [
   { id: "INSTAGRAM", label: "Instagram", color: "#E1306C", maxChars: 2200 },
   { id: "TWITTER",   label: "Twitter/X", color: "#1DA1F2", maxChars: 280 },
+  { id: "LINKEDIN",  label: "LinkedIn",  color: "#0A66C2", maxChars: 3000 },
   { id: "TIKTOK",    label: "TikTok",    color: "#010101", maxChars: 2200 },
   { id: "YOUTUBE",   label: "YouTube",   color: "#FF0000", maxChars: 5000 },
   { id: "FACEBOOK",  label: "Facebook",  color: "#1877F2", maxChars: 63206 },
@@ -91,10 +92,22 @@ export default function ComposePage() {
       }
       const post = await res.json();
       if (mode === "now") {
-        await fetch(`/api/posts/${post.id}/publish`, { method: "POST" });
-        toast.info(
-          "Publication directe sur les réseaux sociaux pas encore branchée — le post est sauvegardé en brouillon."
-        );
+        const pubRes = await fetch(`/api/posts/${post.id}/publish`, { method: "POST" });
+        const pubData = await pubRes.json().catch(() => ({}));
+        type PubResult = { canonicalPlatform?: string | null; platform: string; success: boolean; error?: string };
+        const results: PubResult[] = Array.isArray(pubData.results) ? pubData.results : [];
+        const ok = results.filter((r) => r.success);
+        const ko = results.filter((r) => !r.success);
+        if (pubRes.ok && ok.length > 0 && ko.length === 0) {
+          toast.success(`Publié sur ${ok.length} réseau${ok.length > 1 ? "x" : ""} ✅`);
+        } else if (ok.length > 0 && ko.length > 0) {
+          toast.warning(
+            `Publié sur ${ok.length}/${results.length}. Échec : ${ko.map((r) => r.canonicalPlatform ?? r.platform).join(", ")}`
+          );
+        } else {
+          const firstErr = ko[0]?.error || pubData.error || "Échec de publication.";
+          toast.error(firstErr);
+        }
       } else if (mode === "scheduled") {
         toast.success("Post planifié avec succès !");
       } else {
@@ -165,7 +178,7 @@ export default function ComposePage() {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 20, alignItems: "start" }}>
+      <div className="compose-grid" style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 300px", gap: 20, alignItems: "start" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div style={{ ...card, padding: 20 }}>
             <div style={sectionLbl}>Plateformes</div>
@@ -285,7 +298,7 @@ export default function ComposePage() {
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div style={{ ...card, padding: 20 }}>
             <div style={{ ...sectionLbl, display: "flex", alignItems: "center", gap: 6 }}>
-              ✨ Exemples de posts
+              📝 Modèles de post
             </div>
             <p style={{ fontSize: "0.72rem", color: "var(--clr-muted)", marginBottom: 12, lineHeight: 1.5 }}>
               Cliquez pour insérer un modèle dans l&apos;éditeur.

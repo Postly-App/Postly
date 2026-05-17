@@ -49,27 +49,37 @@ export async function POST(req: Request) {
 
     const resend = getResend();
     if (!resend) {
-      return NextResponse.json(
-        { error: "Envoi d’e-mails non configuré sur ce serveur." },
-        { status: 503 }
-      );
+      // Don't leak "Resend not configured" — return success to caller, log internally
+      logger.warn("api.auth.forgot.email_skipped_no_resend", {
+        route: "/api/auth/forgot",
+        outcome: "email_provider_unconfigured",
+      });
+      return NextResponse.json({ success: true });
     }
 
-    await resend.emails.send({
-      from: process.env.EMAIL_FROM ?? "Postly <onboarding@resend.dev>",
-      to: email,
-      subject: "Réinitialisation de votre mot de passe Postly",
-      html: `
-        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px;">
-          <h2 style="color:#7C5CFC;">Réinitialiser votre mot de passe</h2>
-          <p>Cliquez sur le bouton ci-dessous pour réinitialiser votre mot de passe. Ce lien expire dans 30 minutes.</p>
-          <a href="${resetUrl}" style="display:inline-block;padding:12px 24px;background:#7C5CFC;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;margin:16px 0;">
-            Réinitialiser mon mot de passe
-          </a>
-          <p style="color:#999;font-size:0.85rem;">Si vous n'avez pas demandé cette réinitialisation, ignorez cet email.</p>
-        </div>
-      `,
-    });
+    try {
+      await resend.emails.send({
+        from: process.env.EMAIL_FROM ?? process.env.RESEND_FROM ?? "Postly <onboarding@resend.dev>",
+        to: email,
+        subject: "Réinitialisation de votre mot de passe Postly",
+        html: `
+          <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px;">
+            <h2 style="color:#7C5CFC;">Réinitialiser votre mot de passe</h2>
+            <p>Cliquez sur le bouton ci-dessous pour réinitialiser votre mot de passe. Ce lien expire dans 30 minutes.</p>
+            <a href="${resetUrl}" style="display:inline-block;padding:12px 24px;background:#7C5CFC;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;margin:16px 0;">
+              Réinitialiser mon mot de passe
+            </a>
+            <p style="color:#999;font-size:0.85rem;">Si vous n'avez pas demandé cette réinitialisation, ignorez cet email.</p>
+          </div>
+        `,
+      });
+    } catch (sendErr) {
+      // Email send failure shouldn't leak user existence either
+      logger.error("api.auth.forgot.email_send_failed", {
+        route: "/api/auth/forgot",
+        err: sendErr,
+      });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
