@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
+import { useEffect, useState } from "react";
 import Logo from "@/components/Logo";
 import CommandPalette from "@/components/layout/CommandPalette";
 
@@ -37,17 +38,56 @@ export default function AppShell({ children, user }: Props) {
   const pathname = usePathname();
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
 
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Auto-close drawer on route change
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  // Lock body scroll while mobile drawer is open
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    if (mobileOpen) {
+      document.body.classList.add("app-drawer-locked");
+    } else {
+      document.body.classList.remove("app-drawer-locked");
+    }
+    return () => document.body.classList.remove("app-drawer-locked");
+  }, [mobileOpen]);
+
+  // Close on Escape
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setMobileOpen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [mobileOpen]);
+
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "var(--clr-bg)", color: "var(--clr-text)" }}>
+      {/* Mobile backdrop — only visible when drawer open */}
+      {mobileOpen && (
+        <div
+          onClick={() => setMobileOpen(false)}
+          aria-hidden="true"
+          className="app-mobile-backdrop"
+        />
+      )}
+
       {/* ── SIDEBAR ──────────────────────────────────────────── */}
-      <aside style={{
-        width: 220, flexShrink: 0,
-        display: "flex", flexDirection: "column",
-        borderRight: "1px solid var(--clr-border)",
-        background: "#0D0D14",
-        position: "sticky", top: 0, height: "100vh",
-        overflowY: "auto",
-      }}>
+      <aside
+        className={`app-sidebar ${mobileOpen ? "app-sidebar-open" : ""}`}
+        style={{
+          width: 220, flexShrink: 0,
+          display: "flex", flexDirection: "column",
+          borderRight: "1px solid var(--clr-border)",
+          background: "#0D0D14",
+          position: "sticky", top: 0, height: "100vh",
+          overflowY: "auto",
+          zIndex: 50,
+        }}
+      >
         {/* Logo */}
         <div style={{
           display: "flex", alignItems: "center",
@@ -218,9 +258,42 @@ export default function AppShell({ children, user }: Props) {
           backdropFilter: "blur(20px) saturate(180%)",
           WebkitBackdropFilter: "blur(20px) saturate(180%)",
         }}>
-          {/* Search/Command trigger */}
+          {/* Hamburger — visible only on mobile */}
           <button
             type="button"
+            aria-label="Ouvrir le menu"
+            aria-expanded={mobileOpen}
+            onClick={() => setMobileOpen((v) => !v)}
+            className="app-mobile-only"
+            style={{
+              width: 38, height: 38, borderRadius: 10,
+              background: "var(--surface-2)",
+              border: "1px solid var(--line-2)",
+              color: "var(--text-1)",
+              display: "inline-flex", alignItems: "center", justifyContent: "center",
+              cursor: "pointer", flexShrink: 0,
+            }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              {mobileOpen ? (
+                <>
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </>
+              ) : (
+                <>
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="3" y1="12" x2="21" y2="12" />
+                  <line x1="3" y1="18" x2="21" y2="18" />
+                </>
+              )}
+            </svg>
+          </button>
+
+          {/* Search/Command trigger — desktop only */}
+          <button
+            type="button"
+            className="app-desktop-only"
             onClick={() => {
               // Déclenche l'événement clavier ⌘K pour ouvrir la palette
               window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))

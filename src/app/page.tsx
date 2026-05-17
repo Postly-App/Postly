@@ -925,13 +925,13 @@ function PricingSection() {
       ring: "rgba(99,102,241,0.28)",
       iconColor: "#A5B4FC",
       features: [
-        "1 compte social",
-        "5 publications par mois",
+        "3 comptes sociaux",
+        "10 publications par mois",
         "Programmation jusqu'à 7 jours",
         "Analytics basiques",
       ],
       detailed: [
-        { category: "Publication", items: ["1 compte social connecté", "5 posts/mois max", "Programmation 7 jours d'avance"] },
+        { category: "Publication", items: ["3 comptes sociaux connectés", "10 posts/mois max", "Programmation 7 jours d'avance"] },
         { category: "Création", items: ["Éditeur basique", "Upload d'images", "Pas d'IA incluse"] },
         { category: "Analytics", items: ["Vue d'ensemble", "Reach + engagement", "Pas d'export PDF"] },
         { category: "Support", items: ["Email standard (72h)", "Centre d'aide"] },
@@ -950,13 +950,13 @@ function PricingSection() {
       iconColor: "#67E8F9",
       featured: true,
       features: [
-        "5 comptes sociaux",
+        "15 comptes sociaux",
         "Publications illimitées",
         "Assistant IA inclus",
         "Analytics avancés + exports",
       ],
       detailed: [
-        { category: "Publication", items: ["5 comptes sociaux connectés", "Publications illimitées", "Programmation 60 jours", "File d'attente intelligente"] },
+        { category: "Publication", items: ["15 comptes sociaux connectés", "Publications illimitées", "Programmation 60 jours", "File d'attente intelligente"] },
         { category: "IA", items: ["Génération de légendes (illimité)", "Suggestions de hashtags", "Analyse de ton", "Idées de contenu"] },
         { category: "Analytics", items: ["Dashboard avancé", "Comparaison plateformes", "Top performers identifiés", "Exports PDF illimités"] },
         { category: "Support", items: ["Email prioritaire (24h)", "Chat support", "Onboarding personnalisé"] },
