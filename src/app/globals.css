@@ -998,3 +998,41 @@ body.focus-locked { overflow: hidden; }
   animation: upload-spin 0.9s linear infinite;
   transform-origin: 50% 50%;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   APP AMBIENT — orbes très subtils derrière les pages app
+   Ne casse pas le contraste du contenu : fixed, blurry,
+   très faible opacité. Donne juste de la profondeur sans
+   tuer la lisibilité comme une vidéo en mouvement.
+═══════════════════════════════════════════════════════════ */
+.app-ambient {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.app-ambient::before,
+.app-ambient::after {
+  content: "";
+  position: absolute;
+  width: 720px;
+  height: 720px;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.35;
+  pointer-events: none;
+}
+.app-ambient::before {
+  top: -240px;
+  right: -120px;
+  background: radial-gradient(circle, rgba(124, 92, 252, 0.55), transparent 60%);
+}
+.app-ambient::after {
+  bottom: -260px;
+  left: 200px;
+  background: radial-gradient(circle, rgba(34, 211, 160, 0.30), transparent 65%);
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-ambient { opacity: 0.6; }
+}

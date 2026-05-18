@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { signOut, useSession } from "next-auth/react";
+import Link from "next/link";
 import SocialIcon from "@/components/SocialIcon";
 import { toast } from "sonner";
 
@@ -169,7 +170,7 @@ export default function SettingsPage() {
           <div style={cardStyle}>
             <h3 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: 6 }}>Avatar</h3>
             <p style={{ fontSize: "0.82rem", color: "var(--clr-muted)", marginBottom: 20 }}>
-              Votre avatar est généré à partir de l&apos;initiale de votre nom. L&apos;upload personnalisé arrive bientôt.
+              Généré automatiquement à partir de l&apos;initiale de votre nom.
             </p>
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
               <div style={{
@@ -205,33 +206,43 @@ export default function SettingsPage() {
       {activeTab === "Compte" && (
         <>
           <div style={cardStyle}>
-            <h3 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: 6 }}>Préférences du compte</h3>
-            <p style={{ fontSize: "0.82rem", color: "var(--clr-muted)", marginBottom: 20 }}>Personnalisez votre expérience Postly.</p>
-            <div style={{ marginBottom: 16 }}>
-              <label style={lbl}>Langue</label>
-              <select className="form-input" defaultValue="fr">
-                <option value="fr">Français</option>
-                <option value="en">English</option>
-                <option value="es">Español</option>
-              </select>
+            <h3 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: 6 }}>Données du compte</h3>
+            <p style={{ fontSize: "0.82rem", color: "var(--clr-muted)", marginBottom: 20 }}>
+              Postly est en français, fuseau Europe/Paris par défaut. Les heures de publication respectent ce fuseau.
+            </p>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <a
+                href="/api/user/export"
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  padding: "9px 16px", borderRadius: 12,
+                  border: "1px solid var(--clr-border)",
+                  background: "var(--clr-card2)",
+                  color: "var(--clr-text)",
+                  fontSize: "0.82rem", fontWeight: 600, fontFamily: "var(--font)",
+                  textDecoration: "none",
+                }}
+              >
+                ⬇ Exporter mes données (RGPD)
+              </a>
+              <Link href="/settings/data" style={{
+                display: "inline-flex", alignItems: "center", gap: 6,
+                padding: "9px 16px", borderRadius: 12,
+                border: "1px solid var(--clr-border)",
+                background: "var(--clr-card2)",
+                color: "var(--clr-text)",
+                fontSize: "0.82rem", fontWeight: 600, fontFamily: "var(--font)",
+                textDecoration: "none",
+              }}>
+                🗑 Supprimer mon compte
+              </Link>
             </div>
-            <div style={{ marginBottom: 20 }}>
-              <label style={lbl}>Fuseau horaire</label>
-              <select className="form-input">
-                <option>Europe/Paris (UTC+1)</option>
-                <option>Europe/London (UTC+0)</option>
-                <option>America/New_York (UTC-5)</option>
-              </select>
-            </div>
-            <button onClick={() => toast.success("Préférences enregistrées !")} style={btnPrimary}>Enregistrer</button>
           </div>
 
           <div style={{ ...cardStyle, borderColor: "rgba(252,92,124,0.25)" }}>
             <h3 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: 6, color: "var(--clr-danger)" }}>Déconnexion</h3>
             <p style={{ fontSize: "0.82rem", color: "var(--clr-muted)", marginBottom: 20 }}>
-              Pour supprimer définitivement votre compte et vos données, contactez{" "}
-              <a href="mailto:contact@postly.app" style={{ color: "var(--clr-primary-h)", fontWeight: 600 }}>contact@postly.app</a>{" "}
-              (RGPD — délai 30 jours).
+              Termine ta session sur ce navigateur. Ton compte reste intact.
             </p>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               <button onClick={() => signOut({ callbackUrl: "/" })} style={btnDanger}>Se déconnecter</button>
@@ -295,18 +306,6 @@ export default function SettingsPage() {
             </button>
           </div>
 
-          <div style={cardStyle}>
-            <h3 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: 6 }}>Double authentification (2FA)</h3>
-            <p style={{ fontSize: "0.82rem", color: "var(--clr-muted)", marginBottom: 20 }}>
-              Ajoutez une couche de sécurité supplémentaire à votre compte.
-            </p>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{ fontSize: "0.875rem", color: "var(--clr-muted)" }}>
-                Statut : <strong style={{ color: "var(--clr-danger)" }}>Non activé</strong>
-              </span>
-              <button onClick={() => toast.info("Double authentification bientôt disponible")} style={btnPrimary}>Activer la 2FA</button>
-            </div>
-          </div>
         </>
       )}
 

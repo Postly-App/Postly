@@ -1,6 +1,11 @@
 import OpenAI from "openai"
 import type { ChatCompletionMessageParam } from "openai/resources/chat/completions"
 import { prisma } from "@/lib/prisma"
+import {
+  loadUserAnalyticsInsights,
+  formatHour,
+  WEEKDAYS_FR_LONG,
+} from "@/lib/analytics-insights"
 
 const MAX_MESSAGE_CHARS = 4_000
 const MAX_CONVERSATION_MESSAGES = 22
@@ -26,13 +31,6 @@ export interface SendChatMessageParams {
   messages: ClientChatMessage[]
   stream: boolean
   signal?: AbortSignal
-}
-
-interface BestSlot {
-  weekday: number // 0..6 (Sunday..Saturday)
-  hour: number // 0..23
-  reach: number
-  posts: number
 }
 
 export interface AiUserContextSnapshot {
@@ -118,51 +116,6 @@ function truncateSnippet(text: string, max = POST_SNIPPET_CHARS): string {
   return `${t.slice(0, max)}…`
 }
 
-const WEEKDAYS_FR = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"]
-
-function formatHour(h: number): string {
-  return `${String(h).padStart(2, "0")}h`
-}
-
-/**
- * Calcule les 3 meilleurs créneaux (weekday × hour) à partir du reach des
- * derniers analytics. Si data insuffisante, retourne tableau vide.
- */
-function computeBestSlots(
-  rows: Array<{ reach: number; recordedAt: Date }>
-): BestSlot[] {
-  const bucket = new Map<string, { reach: number; posts: number }>()
-  for (const r of rows) {
-    const d = r.recordedAt
-    const k = `${d.getDay()}-${d.getHours()}`
-    const prev = bucket.get(k) ?? { reach: 0, posts: 0 }
-    bucket.set(k, { reach: prev.reach + r.reach, posts: prev.posts + 1 })
-  }
-  const out: BestSlot[] = []
-  for (const [k, v] of bucket.entries()) {
-    const [wd, h] = k.split("-").map(Number)
-    out.push({ weekday: wd, hour: h, reach: v.reach, posts: v.posts })
-  }
-  out.sort((a, b) => b.reach - a.reach)
-  return out.slice(0, 3)
-}
-
-/**
- * Calcule la plateforme la + performante (reach total) sur la fenêtre donnée.
- */
-function computeTopPlatforms(
-  rows: Array<{ platform: string; reach: number }>
-): Array<{ platform: string; reach: number }> {
-  const totals = new Map<string, number>()
-  for (const r of rows) {
-    totals.set(r.platform, (totals.get(r.platform) ?? 0) + r.reach)
-  }
-  return Array.from(totals.entries())
-    .map(([platform, reach]) => ({ platform, reach }))
-    .sort((a, b) => b.reach - a.reach)
-    .slice(0, 4)
-}
-
 /**
  * Contexte métier Postly pour le prompt système.
  * Inclut désormais les insights analytics : meilleurs créneaux, plateformes top,
@@ -171,10 +124,7 @@ function computeTopPlatforms(
 export async function loadAiUserContext(
   userId: string
 ): Promise<AiUserContextSnapshot> {
-  const since30d = new Date()
-  since30d.setDate(since30d.getDate() - 30)
-
-  const [user, totalPosts, subscription, socialAccounts, recentPosts, analytics] =
+  const [user, totalPosts, subscription, socialAccounts, recentPosts, insights] =
     await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
@@ -203,11 +153,7 @@ export async function loadAiUserContext(
           scheduledAt: true,
         },
       }),
-      prisma.analytics.findMany({
-        where: { userId, recordedAt: { gte: since30d } },
-        select: { platform: true, reach: true, recordedAt: true },
-        take: 1_000,
-      }),
+      loadUserAnalyticsInsights(userId, 30),
     ])
 
   const email = user?.email ?? ""
@@ -232,23 +178,19 @@ export async function loadAiUserContext(
         .join("\n")
     : "Aucun compte social connecté."
 
-  // --- Insights analytics (les vrais "data points" qui rendent l'IA utile) ---
-  const bestSlots = computeBestSlots(analytics)
-  const topPlatforms = computeTopPlatforms(analytics)
-
   const bestSlotsLine =
-    bestSlots.length > 0
-      ? bestSlots
+    insights.bestSlots.length > 0
+      ? insights.bestSlots
           .map(
             (s) =>
-              `${WEEKDAYS_FR[s.weekday]} ${formatHour(s.hour)} (reach cumulé ${s.reach.toLocaleString("fr-FR")} sur ${s.posts} relevés)`
+              `${WEEKDAYS_FR_LONG[s.weekday]} ${formatHour(s.hour)} (reach cumulé ${s.reach.toLocaleString("fr-FR")})`
           )
           .join(" · ")
       : "Pas encore assez de données analytics pour identifier des créneaux. Conseil par défaut : tester mardi-jeudi entre 11h et 13h, et 18h-20h."
 
   const topPlatformsLine =
-    topPlatforms.length > 0
-      ? topPlatforms
+    insights.topPlatforms.length > 0
+      ? insights.topPlatforms
           .map((p) => `${p.platform}=${p.reach.toLocaleString("fr-FR")}`)
           .join(" · ")
       : "Pas encore de signaux analytics."

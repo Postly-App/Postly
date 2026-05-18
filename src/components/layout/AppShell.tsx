@@ -6,7 +6,6 @@ import { signOut } from "next-auth/react";
 import { useEffect, useState } from "react";
 import Logo from "@/components/Logo";
 import CommandPalette from "@/components/layout/CommandPalette";
-import AppPageBackground from "@/components/layout/AppPageBackground";
 import type { UserPlanContext } from "@/lib/plan-limits";
 
 /* ── SVG Icons ──────────────────────────────────────────── */
@@ -87,14 +86,13 @@ export default function AppShell({ children, user, planContext }: Props) {
       style={{
         display: "flex",
         minHeight: "100vh",
-        background: "transparent",
+        background: "var(--clr-bg)",
         color: "var(--clr-text)",
         position: "relative",
-        zIndex: 1,
       }}
     >
-      {/* Background animé — vidéo city-night avec scrim renforcé */}
-      <AppPageBackground />
+      {/* Ambient orbs — TRÈS subtils, pour donner de la profondeur sans casser le contraste */}
+      <div aria-hidden="true" className="app-ambient" />
 
       {/* Mobile backdrop — only visible when drawer open */}
       {mobileOpen && (
