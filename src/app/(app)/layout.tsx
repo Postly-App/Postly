@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import AppShell from "@/components/layout/AppShell";
+import { getUserPlanContext } from "@/lib/plan-limits";
 
 export default async function AppLayout({
   children,
@@ -10,9 +11,15 @@ export default async function AppLayout({
 }) {
   const session = await getServerSession(authOptions);
 
-  if (!session?.user) {
+  if (!session?.user?.id) {
     redirect("/login");
   }
 
-  return <AppShell user={session.user}>{children}</AppShell>;
+  const planContext = await getUserPlanContext(session.user.id);
+
+  return (
+    <AppShell user={session.user} planContext={planContext}>
+      {children}
+    </AppShell>
+  );
 }

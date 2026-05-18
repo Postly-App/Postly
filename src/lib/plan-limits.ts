@@ -76,6 +76,35 @@ export async function getUserActivePlan(userId: string): Promise<Plan> {
 }
 
 /**
+ * Contexte de plan utilisateur — source unique pour tout le frontend.
+ * Retourne le plan + des booléens pratiques + les limites. Utilisé pour
+ * conditionner les CTA d'upgrade, les badges, et le gating de features
+ * sans dupliquer la logique `plan === "PRO"` partout.
+ *
+ * `isPaid` = true pour PRO et AGENCY (= ne pas afficher "Upgrade Pro").
+ */
+export interface UserPlanContext {
+  plan: Plan
+  isFree: boolean
+  isPro: boolean
+  isAgency: boolean
+  isPaid: boolean
+  limits: PlanLimits
+}
+
+export async function getUserPlanContext(userId: string): Promise<UserPlanContext> {
+  const plan = await getUserActivePlan(userId)
+  return {
+    plan,
+    isFree: plan === "FREE",
+    isPro: plan === "PRO",
+    isAgency: plan === "AGENCY",
+    isPaid: plan !== "FREE",
+    limits: PLAN_LIMITS[plan],
+  }
+}
+
+/**
  * Vérifie si l'utilisateur a accès aux features AGENCY (multi-clients, équipe, API, white-label).
  */
 export async function checkCanUseAgencyFeature(

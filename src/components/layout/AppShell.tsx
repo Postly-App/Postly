@@ -6,6 +6,7 @@ import { signOut } from "next-auth/react";
 import { useEffect, useState } from "react";
 import Logo from "@/components/Logo";
 import CommandPalette from "@/components/layout/CommandPalette";
+import type { UserPlanContext } from "@/lib/plan-limits";
 
 /* ── SVG Icons ──────────────────────────────────────────── */
 const DashIcon  = () => <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>;
@@ -32,9 +33,14 @@ const BOTTOM_NAV = [
 interface Props {
   children: React.ReactNode;
   user?: { name?: string | null; email?: string | null; image?: string | null };
+  planContext?: UserPlanContext;
 }
 
-export default function AppShell({ children, user }: Props) {
+export default function AppShell({ children, user, planContext }: Props) {
+  // Default to FREE if planContext somehow not provided (defensive)
+  const plan = planContext?.plan ?? "FREE";
+  const isPaid = planContext?.isPaid ?? false;
+  const isAgency = planContext?.isAgency ?? false;
   const pathname = usePathname();
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
 
@@ -181,27 +187,73 @@ export default function AppShell({ children, user }: Props) {
 
         {/* Bottom section */}
         <div style={{ padding: "12px 12px 16px", borderTop: "1px solid var(--clr-border)", display: "flex", flexDirection: "column", gap: 2 }}>
-          {/* Upgrade CTA */}
-          <div style={{
-            padding: "12px 14px", borderRadius: 12,
-            background: "linear-gradient(135deg,rgba(124,92,252,0.15),rgba(240,98,146,0.08))",
-            border: "1px solid rgba(124,92,252,0.25)", marginBottom: 8,
-          }}>
-            <div style={{ fontSize: "0.72rem", fontWeight: 800, letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>
-              <span style={{ background: "linear-gradient(135deg,#9B82FD,#F06292)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-                ✦ Upgrade
-              </span>
+          {/* Upgrade CTA — affiché uniquement pour les utilisateurs FREE */}
+          {!isPaid && (
+            <div style={{
+              padding: "12px 14px", borderRadius: 12,
+              background: "linear-gradient(135deg,rgba(124,92,252,0.15),rgba(240,98,146,0.08))",
+              border: "1px solid rgba(124,92,252,0.25)", marginBottom: 8,
+            }}>
+              <div style={{ fontSize: "0.72rem", fontWeight: 800, letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>
+                <span style={{ background: "linear-gradient(135deg,#9B82FD,#F06292)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+                  ✦ Passer Pro
+                </span>
+              </div>
+              <p style={{ fontSize: "0.72rem", color: "var(--clr-muted)", marginBottom: 8, lineHeight: 1.5 }}>
+                Accédez à l&apos;IA et aux analytics avancés.
+              </p>
+              <Link href="/billing" style={{
+                display: "block", textAlign: "center", padding: "6px 0",
+                borderRadius: 8, background: "linear-gradient(135deg,#7C5CFC,#5B3EE8)",
+                color: "#fff", fontSize: "0.75rem", fontWeight: 700,
+                boxShadow: "0 0 12px rgba(124,92,252,0.4)", textDecoration: "none",
+              }}>Choisir un plan →</Link>
             </div>
-            <p style={{ fontSize: "0.72rem", color: "var(--clr-muted)", marginBottom: 8, lineHeight: 1.5 }}>
-              Accédez à l&apos;IA et aux analytics avancés.
-            </p>
+          )}
+
+          {/* Plan actif — affiché pour PRO et AGENCY */}
+          {isPaid && (
             <Link href="/billing" style={{
-              display: "block", textAlign: "center", padding: "6px 0",
-              borderRadius: 8, background: "linear-gradient(135deg,#7C5CFC,#5B3EE8)",
-              color: "#fff", fontSize: "0.75rem", fontWeight: 700,
-              boxShadow: "0 0 12px rgba(124,92,252,0.4)", textDecoration: "none",
-            }}>Passer Pro →</Link>
-          </div>
+              display: "flex", alignItems: "center", gap: 10,
+              padding: "10px 12px", borderRadius: 12, marginBottom: 8,
+              background: isAgency
+                ? "linear-gradient(135deg, rgba(244,114,182,0.14), rgba(192,132,252,0.10))"
+                : "linear-gradient(135deg, rgba(99,102,241,0.14), rgba(34,211,238,0.08))",
+              border: isAgency
+                ? "1px solid rgba(244,114,182,0.30)"
+                : "1px solid rgba(99,102,241,0.30)",
+              textDecoration: "none",
+              transition: "var(--transition)",
+            }}>
+              <div style={{
+                width: 28, height: 28, borderRadius: 8,
+                background: isAgency
+                  ? "linear-gradient(135deg, #F472B6, #C084FC)"
+                  : "linear-gradient(135deg, #818CF8, #6366F1)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: "0.7rem", fontWeight: 800, color: "#fff",
+                boxShadow: isAgency
+                  ? "0 0 12px rgba(244,114,182,0.45)"
+                  : "0 0 12px rgba(99,102,241,0.45)",
+                flexShrink: 0,
+              }}>
+                ✦
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{
+                  fontSize: "0.74rem", fontWeight: 700, lineHeight: 1.2,
+                  color: isAgency ? "#F9A8D4" : "#A5B4FC",
+                  letterSpacing: "0.04em",
+                  textTransform: "uppercase",
+                }}>
+                  Plan {plan === "AGENCY" ? "Agence" : "Pro"}
+                </div>
+                <div style={{ fontSize: "0.68rem", color: "var(--clr-muted)", lineHeight: 1.3, marginTop: 1 }}>
+                  Gérer l&apos;abonnement
+                </div>
+              </div>
+            </Link>
+          )}
 
           <Link href="/" style={{
             display: "flex", alignItems: "center", gap: 10,
@@ -213,7 +265,7 @@ export default function AppShell({ children, user }: Props) {
             Retour au site
           </Link>
 
-          {/* User avatar */}
+          {/* User avatar + plan badge */}
           {user && (
             <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", marginTop: 4 }}>
               <div style={{
@@ -221,8 +273,34 @@ export default function AppShell({ children, user }: Props) {
                 background: "linear-gradient(135deg,#7C5CFC,#F06292)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: "0.7rem", fontWeight: 800, color: "#fff",
+                position: "relative",
               }}>
                 {user.name?.charAt(0)?.toUpperCase() ?? "U"}
+                {isPaid && (
+                  <span
+                    title={isAgency ? "Plan Agence" : "Plan Pro"}
+                    style={{
+                      position: "absolute",
+                      bottom: -3,
+                      right: -3,
+                      minWidth: 16, height: 16,
+                      padding: "0 4px",
+                      borderRadius: 8,
+                      background: isAgency
+                        ? "linear-gradient(135deg, #F472B6, #C084FC)"
+                        : "linear-gradient(135deg, #67E8F9, #818CF8)",
+                      border: "1.5px solid #0D0D14",
+                      color: "#06070B",
+                      fontSize: "0.55rem",
+                      fontWeight: 800,
+                      letterSpacing: "0.04em",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      lineHeight: 1,
+                    }}
+                  >
+                    {isAgency ? "AG" : "PRO"}
+                  </span>
+                )}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: "0.78rem", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
