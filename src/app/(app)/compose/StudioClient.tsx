@@ -25,6 +25,9 @@ import {
    apparaissent. Charactères max = limite plateforme (utilisée
    pour le compteur + AI context). Couleurs pour le preview.
 ──────────────────────────────────────────────────────────── */
+// LinkedIn temporarily disabled : application LinkedIn Developer pas
+// encore créée. Réactiver en remettant LINKEDIN dans ALL_PLATFORMS + en
+// ajoutant LINKEDIN_CLIENT_ID/SECRET dans les env vars Vercel.
 const PLATFORM_META = {
   INSTAGRAM: { label: "Instagram", color: "#E1306C", maxChars: 2200 },
   TWITTER:   { label: "X",         color: "#FFFFFF", maxChars: 280 },
@@ -39,7 +42,6 @@ type PlatformId = keyof typeof PLATFORM_META;
 const ALL_PLATFORMS: PlatformId[] = [
   "INSTAGRAM",
   "TWITTER",
-  "LINKEDIN",
   "TIKTOK",
   "YOUTUBE",
   "FACEBOOK",
