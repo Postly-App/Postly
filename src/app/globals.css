@@ -987,3 +987,14 @@ body.focus-locked { overflow: hidden; }
   );
   filter: drop-shadow(0 0 8px rgba(192, 132, 252, 0.4));
 }
+
+/* ═══════════════════════════════════════════════════════════
+   UPLOAD BUTTON SPIN
+═══════════════════════════════════════════════════════════ */
+@keyframes upload-spin {
+  to { transform: rotate(360deg); }
+}
+.upload-spin {
+  animation: upload-spin 0.9s linear infinite;
+  transform-origin: 50% 50%;
+}

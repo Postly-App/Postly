@@ -2,7 +2,7 @@
 
 import { signIn } from "next-auth/react";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import Logo from "@/components/Logo";
@@ -37,6 +37,8 @@ function Benefit({ icon, title, desc }: { icon: string; title: string; desc: str
 
 export default function SignupPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromDemo = searchParams?.get("from") === "demo";
   const [name, setName]         = useState("");
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
@@ -164,11 +166,38 @@ export default function SignupPage() {
       }}>
         <div style={{ width: "100%", maxWidth: 400 }}>
           <h1 style={{ fontSize: "1.8rem", fontWeight: 800, marginBottom: 8, letterSpacing: "-0.5px" }}>
-            Créer un compte ✨
+            {fromDemo ? "Accéder à la démo" : "Créer un compte ✨"}
           </h1>
-          <p style={{ color: "#9B99B5", marginBottom: 36, fontSize: "0.9rem" }}>
-            Commencez gratuitement — aucune carte requise
+          <p style={{ color: "#9B99B5", marginBottom: fromDemo ? 18 : 36, fontSize: "0.9rem" }}>
+            {fromDemo
+              ? "Crée ton compte gratuit pour explorer l'interface Postly en conditions réelles."
+              : "Commencez gratuitement — aucune carte requise"}
           </p>
+
+          {fromDemo && (
+            <div
+              style={{
+                marginBottom: 22,
+                padding: "12px 14px",
+                borderRadius: 12,
+                background: "linear-gradient(135deg, rgba(124,92,252,0.14), rgba(155,130,253,0.06))",
+                border: "1px solid rgba(124,92,252,0.30)",
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+              }}
+            >
+              <span style={{ fontSize: "1.1rem" }}>🎬</span>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: "0.82rem", color: "#F1F0FF" }}>
+                  Démo intégrée au compte
+                </div>
+                <div style={{ fontSize: "0.74rem", color: "#9B99B5", marginTop: 2, lineHeight: 1.45 }}>
+                  Tu accèdes directement à l&apos;app, pas une vidéo. Inscription en 30 secondes.
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* OAuth */}
           <OAuthBtn icon={<GoogleIcon />} label="Continuer avec Google" onClick={() => signIn("google", { callbackUrl: "/dashboard" })} />

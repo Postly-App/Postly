@@ -6,6 +6,7 @@ import { signOut } from "next-auth/react";
 import { useEffect, useState } from "react";
 import Logo from "@/components/Logo";
 import CommandPalette from "@/components/layout/CommandPalette";
+import AppPageBackground from "@/components/layout/AppPageBackground";
 import type { UserPlanContext } from "@/lib/plan-limits";
 
 /* ── SVG Icons ──────────────────────────────────────────── */
@@ -18,11 +19,22 @@ const CardIcon  = () => <svg width="16" height="16" fill="none" stroke="currentC
 const UpIcon    = () => <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="17 11 12 6 7 11"/><polyline points="17 18 12 13 7 18"/></svg>;
 const BackIcon  = () => <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>;
 
+/* ── Agency icons ──────────────────────────────────────────── */
+const UsersIcon = () => <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
+const BriefcaseIcon = () => <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>;
+const KeyIcon = () => <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>;
+
 const MAIN_NAV = [
   { href: "/dashboard", icon: DashIcon,  label: "Dashboard" },
   { href: "/compose",   icon: PenIcon,   label: "Studio" },
   { href: "/analytics", icon: ChartIcon, label: "Analytics" },
   { href: "/settings",  icon: LinkIcon,  label: "Comptes" },
+];
+
+const AGENCY_NAV = [
+  { href: "/clients",            icon: BriefcaseIcon, label: "Clients" },
+  { href: "/settings/team",      icon: UsersIcon,     label: "Équipe" },
+  { href: "/settings/api-keys",  icon: KeyIcon,       label: "API" },
 ];
 
 const BOTTOM_NAV = [
@@ -71,7 +83,19 @@ export default function AppShell({ children, user, planContext }: Props) {
   }, [mobileOpen]);
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "var(--clr-bg)", color: "var(--clr-text)" }}>
+    <div
+      style={{
+        display: "flex",
+        minHeight: "100vh",
+        background: "transparent",
+        color: "var(--clr-text)",
+        position: "relative",
+        zIndex: 1,
+      }}
+    >
+      {/* Background animé — vidéo city-night avec scrim renforcé */}
+      <AppPageBackground />
+
       {/* Mobile backdrop — only visible when drawer open */}
       {mobileOpen && (
         <div
@@ -94,13 +118,28 @@ export default function AppShell({ children, user, planContext }: Props) {
           zIndex: 50,
         }}
       >
-        {/* Logo */}
+        {/* Logo + plan badge */}
         <div style={{
-          display: "flex", alignItems: "center",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
           padding: "0 16px", height: 64,
           borderBottom: "1px solid var(--clr-border)",
         }}>
           <Logo size={28} />
+          {isPaid && (
+            <span style={{
+              fontSize: "0.6rem", fontWeight: 800, letterSpacing: "0.10em",
+              padding: "3px 7px", borderRadius: 6,
+              color: isAgency ? "#F9A8D4" : "#A5B4FC",
+              background: isAgency
+                ? "rgba(244,114,182,0.12)"
+                : "rgba(99,102,241,0.14)",
+              border: isAgency
+                ? "1px solid rgba(244,114,182,0.30)"
+                : "1px solid rgba(99,102,241,0.30)",
+            }}>
+              {isAgency ? "AGENCE" : "PRO"}
+            </span>
+          )}
         </div>
 
         {/* Main nav */}
@@ -143,6 +182,62 @@ export default function AppShell({ children, user, planContext }: Props) {
               </Link>
             );
           })}
+
+          {/* AGENCY-only section — only renders for Plan Agence */}
+          {isAgency && (
+            <>
+              <div style={{ height: 1, background: "var(--clr-border)", margin: "12px 0" }} />
+              <div style={{
+                display: "flex", alignItems: "center", gap: 6,
+                fontSize: "0.65rem", fontWeight: 700, letterSpacing: "1.5px",
+                textTransform: "uppercase",
+                color: "#F9A8D4",
+                padding: "0 10px", marginBottom: 6,
+              }}>
+                <span style={{
+                  width: 5, height: 5, borderRadius: "50%",
+                  background: "#F472B6",
+                  boxShadow: "0 0 8px rgba(244,114,182,0.7)",
+                }} />
+                AGENCE
+              </div>
+
+              {AGENCY_NAV.map(({ href, icon: Icon, label }) => {
+                const active = isActive(href);
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 10,
+                      padding: "10px 12px", borderRadius: 10,
+                      fontSize: "0.875rem", fontWeight: 500,
+                      color: active ? "#F9A8D4" : "var(--clr-muted)",
+                      background: active ? "rgba(244,114,182,0.12)" : "transparent",
+                      border: active ? "1px solid rgba(244,114,182,0.25)" : "1px solid transparent",
+                      transition: "var(--transition)",
+                      textDecoration: "none",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!active) {
+                        (e.currentTarget as HTMLAnchorElement).style.background = "rgba(244,114,182,0.06)";
+                        (e.currentTarget as HTMLAnchorElement).style.color = "#F9A8D4";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!active) {
+                        (e.currentTarget as HTMLAnchorElement).style.background = "transparent";
+                        (e.currentTarget as HTMLAnchorElement).style.color = "var(--clr-muted)";
+                      }
+                    }}
+                  >
+                    <Icon />
+                    {label}
+                  </Link>
+                );
+              })}
+            </>
+          )}
 
           <div style={{ height: 1, background: "var(--clr-border)", margin: "12px 0" }} />
           <div style={{ fontSize: "0.65rem", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "rgba(155,153,181,0.45)", padding: "0 10px", marginBottom: 6 }}>

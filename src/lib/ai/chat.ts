@@ -5,7 +5,11 @@ import { prisma } from "@/lib/prisma"
 const MAX_MESSAGE_CHARS = 4_000
 const MAX_CONVERSATION_MESSAGES = 22
 const POST_SNIPPET_CHARS = 320
-const MODEL_DEFAULT = "gpt-4o-mini"
+
+// Groq via OpenAI-compatible endpoint. Falls back to OPENAI_API_KEY if Groq absent.
+const GROQ_BASE_URL = "https://api.groq.com/openai/v1"
+const GROQ_DEFAULT_MODEL = "llama-3.3-70b-versatile"
+const OPENAI_DEFAULT_MODEL = "gpt-4o-mini"
 
 /** Caractères de contrôle dangereux / bruit (hors tab / newline). */
 const CTRL_EXCEPT_TAB_LF = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g
@@ -24,6 +28,13 @@ export interface SendChatMessageParams {
   signal?: AbortSignal
 }
 
+interface BestSlot {
+  weekday: number // 0..6 (Sunday..Saturday)
+  hour: number // 0..23
+  reach: number
+  posts: number
+}
+
 export interface AiUserContextSnapshot {
   displayName: string | null
   plan: string
@@ -34,18 +45,41 @@ export interface AiUserContextSnapshot {
   serverContextSummary: string
 }
 
+/**
+ * IA configurée si on a au moins une clé (Groq prioritaire, OpenAI fallback).
+ */
 export function isAiChatConfigured(): boolean {
-  return Boolean(process.env.OPENAI_API_KEY?.trim())
+  return Boolean(
+    process.env.GROQ_API_KEY?.trim() || process.env.OPENAI_API_KEY?.trim()
+  )
 }
 
-function getOpenAIClient(): OpenAI | null {
-  const key = process.env.OPENAI_API_KEY?.trim()
-  if (!key) return null
-  return new OpenAI({ apiKey: key })
+interface AiProviderConfig {
+  apiKey: string
+  baseURL?: string
+  model: string
+  provider: "groq" | "openai"
 }
 
-export function getOpenAIModel(): string {
-  return process.env.OPENAI_MODEL?.trim() || MODEL_DEFAULT
+function getAiProvider(): AiProviderConfig | null {
+  const groqKey = process.env.GROQ_API_KEY?.trim()
+  if (groqKey) {
+    return {
+      apiKey: groqKey,
+      baseURL: GROQ_BASE_URL,
+      model: process.env.GROQ_MODEL?.trim() || GROQ_DEFAULT_MODEL,
+      provider: "groq",
+    }
+  }
+  const openaiKey = process.env.OPENAI_API_KEY?.trim()
+  if (openaiKey) {
+    return {
+      apiKey: openaiKey,
+      model: process.env.OPENAI_MODEL?.trim() || OPENAI_DEFAULT_MODEL,
+      provider: "openai",
+    }
+  }
+  return null
 }
 
 /**
@@ -59,7 +93,7 @@ export function sanitizeUserText(raw: string): string {
 }
 
 /**
- * Valide et tronque l’historique client (user / assistant uniquement).
+ * Valide et tronque l'historique client (user / assistant uniquement).
  */
 export function sanitizeClientMessages(input: unknown): ClientChatMessage[] {
   if (!Array.isArray(input)) return []
@@ -84,42 +118,102 @@ function truncateSnippet(text: string, max = POST_SNIPPET_CHARS): string {
   return `${t.slice(0, max)}…`
 }
 
+const WEEKDAYS_FR = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"]
+
+function formatHour(h: number): string {
+  return `${String(h).padStart(2, "0")}h`
+}
+
 /**
- * Contexte métier Postly pour le prompt système (aucun jeton, id Stripe, email complet).
+ * Calcule les 3 meilleurs créneaux (weekday × hour) à partir du reach des
+ * derniers analytics. Si data insuffisante, retourne tableau vide.
  */
-export async function loadAiUserContext(userId: string): Promise<AiUserContextSnapshot> {
-  const [user, totalPosts, subscription, socialAccounts, recentPosts] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: userId },
-      select: { name: true, email: true },
-    }),
-    prisma.post.count({ where: { userId } }),
-    prisma.subscription.findUnique({
-      where: { userId },
-      select: { plan: true, status: true },
-    }),
-    prisma.socialAccount.findMany({
-      where: { userId },
-      select: { platform: true, accountName: true },
-      orderBy: { updatedAt: "desc" },
-      take: 12,
-    }),
-    prisma.post.findMany({
-      where: { userId },
-      orderBy: { createdAt: "desc" },
-      take: 8,
-      select: {
-        status: true,
-        platforms: true,
-        content: true,
-        createdAt: true,
-        scheduledAt: true,
-      },
-    }),
-  ])
+function computeBestSlots(
+  rows: Array<{ reach: number; recordedAt: Date }>
+): BestSlot[] {
+  const bucket = new Map<string, { reach: number; posts: number }>()
+  for (const r of rows) {
+    const d = r.recordedAt
+    const k = `${d.getDay()}-${d.getHours()}`
+    const prev = bucket.get(k) ?? { reach: 0, posts: 0 }
+    bucket.set(k, { reach: prev.reach + r.reach, posts: prev.posts + 1 })
+  }
+  const out: BestSlot[] = []
+  for (const [k, v] of bucket.entries()) {
+    const [wd, h] = k.split("-").map(Number)
+    out.push({ weekday: wd, hour: h, reach: v.reach, posts: v.posts })
+  }
+  out.sort((a, b) => b.reach - a.reach)
+  return out.slice(0, 3)
+}
+
+/**
+ * Calcule la plateforme la + performante (reach total) sur la fenêtre donnée.
+ */
+function computeTopPlatforms(
+  rows: Array<{ platform: string; reach: number }>
+): Array<{ platform: string; reach: number }> {
+  const totals = new Map<string, number>()
+  for (const r of rows) {
+    totals.set(r.platform, (totals.get(r.platform) ?? 0) + r.reach)
+  }
+  return Array.from(totals.entries())
+    .map(([platform, reach]) => ({ platform, reach }))
+    .sort((a, b) => b.reach - a.reach)
+    .slice(0, 4)
+}
+
+/**
+ * Contexte métier Postly pour le prompt système.
+ * Inclut désormais les insights analytics : meilleurs créneaux, plateformes top,
+ * ton/sujets récents — pour permettre à l'IA d'adapter ses réponses.
+ */
+export async function loadAiUserContext(
+  userId: string
+): Promise<AiUserContextSnapshot> {
+  const since30d = new Date()
+  since30d.setDate(since30d.getDate() - 30)
+
+  const [user, totalPosts, subscription, socialAccounts, recentPosts, analytics] =
+    await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { name: true, email: true },
+      }),
+      prisma.post.count({ where: { userId } }),
+      prisma.subscription.findUnique({
+        where: { userId },
+        select: { plan: true, status: true },
+      }),
+      prisma.socialAccount.findMany({
+        where: { userId },
+        select: { platform: true, accountName: true },
+        orderBy: { updatedAt: "desc" },
+        take: 12,
+      }),
+      prisma.post.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+        take: 8,
+        select: {
+          status: true,
+          platforms: true,
+          content: true,
+          createdAt: true,
+          scheduledAt: true,
+        },
+      }),
+      prisma.analytics.findMany({
+        where: { userId, recordedAt: { gte: since30d } },
+        select: { platform: true, reach: true, recordedAt: true },
+        take: 1_000,
+      }),
+    ])
 
   const email = user?.email ?? ""
-  const emailHint = email.includes("@") ? `${email.split("@")[0]?.slice(0, 2) ?? ""}••@${email.split("@")[1] ?? ""}` : "inconnu"
+  const emailHint = email.includes("@")
+    ? `${email.split("@")[0]?.slice(0, 2) ?? ""}••@${email.split("@")[1] ?? ""}`
+    : "inconnu"
 
   const platforms = [...new Set(socialAccounts.map((a) => a.platform))]
 
@@ -130,7 +224,7 @@ export async function loadAiUserContext(userId: string): Promise<AiUserContextSn
           return `${i + 1}. [${p.status}] (${plats}) ${truncateSnippet(p.content)}`
         })
         .join("\n")
-    : "Aucun post enregistré pour l’instant."
+    : "Aucun post enregistré pour l'instant."
 
   const accountsLines = socialAccounts.length
     ? socialAccounts
@@ -138,13 +232,36 @@ export async function loadAiUserContext(userId: string): Promise<AiUserContextSn
         .join("\n")
     : "Aucun compte social connecté."
 
+  // --- Insights analytics (les vrais "data points" qui rendent l'IA utile) ---
+  const bestSlots = computeBestSlots(analytics)
+  const topPlatforms = computeTopPlatforms(analytics)
+
+  const bestSlotsLine =
+    bestSlots.length > 0
+      ? bestSlots
+          .map(
+            (s) =>
+              `${WEEKDAYS_FR[s.weekday]} ${formatHour(s.hour)} (reach cumulé ${s.reach.toLocaleString("fr-FR")} sur ${s.posts} relevés)`
+          )
+          .join(" · ")
+      : "Pas encore assez de données analytics pour identifier des créneaux. Conseil par défaut : tester mardi-jeudi entre 11h et 13h, et 18h-20h."
+
+  const topPlatformsLine =
+    topPlatforms.length > 0
+      ? topPlatforms
+          .map((p) => `${p.platform}=${p.reach.toLocaleString("fr-FR")}`)
+          .join(" · ")
+      : "Pas encore de signaux analytics."
+
   const serverContextSummary = [
     `Email masqué : ${emailHint}`,
     `Plan : ${subscription?.plan ?? "FREE"}${subscription?.status ? ` (statut abonnement : ${subscription.status})` : ""}`,
     `Nombre total de posts : ${totalPosts}`,
     `Réseaux connectés (plateformes distinctes) : ${platforms.length ? platforms.join(", ") : "aucun"}`,
     `Comptes (nom affiché uniquement) :\n${accountsLines}`,
-    `Derniers posts (extraits) :\n${recentPostsLines}`,
+    `Derniers posts (extraits — pour analyser ton, sujets, fréquence) :\n${recentPostsLines}`,
+    `Top plateformes par reach 30j : ${topPlatformsLine}`,
+    `Meilleurs créneaux observés (30j) : ${bestSlotsLine}`,
   ].join("\n")
 
   return {
@@ -158,16 +275,28 @@ export async function loadAiUserContext(userId: string): Promise<AiUserContextSn
 }
 
 function buildSystemPrompt(ctx: AiUserContextSnapshot): string {
-  const who = ctx.displayName ? `L’utilisateur s’appelle « ${ctx.displayName} ».` : "L’utilisateur n’a pas renseigné de nom affiché."
+  const who = ctx.displayName
+    ? `L'utilisateur s'appelle « ${ctx.displayName} ».`
+    : "L'utilisateur n'a pas renseigné de nom affiché."
+
   return [
-    "Tu es l’assistant Postly, une application de planification et publication sur les réseaux sociaux.",
-    "Tu réponds en français, de façon concise et actionnable.",
-    "Tu aides à : analyser les posts décrits dans le contexte, proposer des idées, rédiger ou améliorer des contenus, expliquer les bonnes pratiques.",
-    "Tu n’as pas accès aux comptes réels ni aux API sociales : ne promets jamais de publier ou modifier quoi que ce soit toi-même ; oriente vers l’interface Postly.",
-    "Ne demande jamais de mots de passe, jetons API, clés Stripe ou secrets. Ne répète pas d’identifiants sensibles si l’utilisateur en colle dans le chat — refuse poliment.",
-    "Si le contexte ne suffit pas, pose une question courte.",
+    "Tu es l'assistant IA de Postly — un copilote stratégique pour créateurs et marques sur les réseaux sociaux.",
+    "Tu réponds en français, ton chaleureux mais expert, concis (max 5-6 phrases par défaut sauf demande explicite de plus).",
     "",
-    "--- Contexte Postly (résumé injecté par le serveur) ---",
+    "🎯 Ton rôle :",
+    "- Adapter chaque réponse au contexte de CE user (ton, plateformes, créneaux performants, sujets récents).",
+    "- Proposer des idées de posts concrètes (avec hooks, CTAs, hashtags) calibrées sur les plateformes que l'utilisateur utilise vraiment.",
+    "- Recommander les meilleurs créneaux de publication à partir des données analytics observées (voir contexte). Si pas de données, donner des règles génériques mais signaler que c'est générique.",
+    "- Analyser le ton/style des derniers posts pour rester cohérent.",
+    "- Suggérer des améliorations rédactionnelles (clarté, accroche, longueur, hashtags).",
+    "",
+    "🚫 Garde-fous :",
+    "- Pas d'accès aux comptes réels / APIs sociales : ne promets jamais de publier toi-même, oriente vers le bouton 'Programmer' de Postly.",
+    "- Ne demande JAMAIS de mots de passe, jetons API, clés Stripe. Refuse poliment si l'utilisateur en colle.",
+    "- Si tu manques d'info, pose UNE question courte (pas plus).",
+    "- Pas de blabla générique type 'voici quelques conseils...' — vise direct.",
+    "",
+    "--- Contexte utilisateur (injecté serveur, à exploiter dans chaque réponse) ---",
     who,
     ctx.serverContextSummary,
     "",
@@ -192,23 +321,30 @@ async function buildOpenAIMessages(
 }
 
 /**
- * Envoie la conversation à OpenAI. Retourne soit le texte complet, soit un flux UTF-8 brut (deltas concaténés).
+ * Envoie la conversation au provider IA (Groq prioritaire, OpenAI fallback).
+ * Retourne soit le texte complet, soit un flux UTF-8 brut (deltas concaténés).
  */
 export async function sendChatMessage(
   params: SendChatMessageParams
 ): Promise<string | ReadableStream<Uint8Array>> {
-  const openai = getOpenAIClient()
-  if (!openai) {
-    throw new Error("OPENAI_API_KEY manquant : l’assistant IA n’est pas configuré sur ce serveur.")
+  const cfg = getAiProvider()
+  if (!cfg) {
+    throw new Error(
+      "Aucune clé IA configurée (GROQ_API_KEY ou OPENAI_API_KEY)."
+    )
   }
 
+  const client = new OpenAI({
+    apiKey: cfg.apiKey,
+    ...(cfg.baseURL ? { baseURL: cfg.baseURL } : {}),
+  })
+
   const messages = await buildOpenAIMessages(params.userId, params.messages)
-  const model = getOpenAIModel()
 
   if (params.stream) {
-    const stream = await openai.chat.completions.create(
+    const stream = await client.chat.completions.create(
       {
-        model,
+        model: cfg.model,
         messages,
         stream: true,
         temperature: 0.6,
@@ -233,9 +369,9 @@ export async function sendChatMessage(
     })
   }
 
-  const completion = await openai.chat.completions.create(
+  const completion = await client.chat.completions.create(
     {
-      model,
+      model: cfg.model,
       messages,
       stream: false,
       temperature: 0.6,

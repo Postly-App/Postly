@@ -44,7 +44,7 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         error:
-          "L’assistant IA n’est pas configuré (variable OPENAI_API_KEY manquante côté serveur).",
+          "L'assistant IA n'est pas configuré (GROQ_API_KEY ou OPENAI_API_KEY manquante côté serveur).",
         code: "AI_NOT_CONFIGURED",
       },
       { status: 503 }

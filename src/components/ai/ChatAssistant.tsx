@@ -51,7 +51,7 @@ export default function ChatAssistant({ enabled, plan = "FREE" }: Props) {
         {
           role: "assistant",
           content:
-            "L’assistant n’est pas encore configuré sur ce serveur (clé OpenAI manquante). Ajoute OPENAI_API_KEY aux variables d’environnement puis redémarre l’app.",
+            "L'assistant n'est pas encore configuré sur ce serveur (GROQ_API_KEY ou OPENAI_API_KEY manquante).",
         },
       ]);
       setLoading(false);

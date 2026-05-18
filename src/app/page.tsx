@@ -304,8 +304,9 @@ function HeroSection() {
                 <ArrowUpRight size={16} strokeWidth={2.2} />
               </MagneticLink>
               <MagneticLink
-                href="#features"
+                href="/signup?from=demo"
                 strength={10}
+                aria-label="Voir une démo — inscription gratuite requise"
                 style={{
                   display: "inline-flex",
                   alignItems: "center",

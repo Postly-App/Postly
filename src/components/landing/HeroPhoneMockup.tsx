@@ -1,35 +1,67 @@
 "use client"
 
-import { motion } from "framer-motion"
+import { useRef } from "react"
+import { motion, useMotionValue, useSpring, useTransform } from "framer-motion"
 import { Sparkles, Calendar, ChevronLeft, ImageIcon, Hash, Check } from "lucide-react"
 import { EASE } from "@/lib/motion"
 
 /**
  * Mockup iPhone — affiche un vrai écran composer Postly (mock du produit, pas
- * de la landing). Tout est rendu en pur CSS/SVG, aucune image externe.
+ * de la landing). Pure CSS/SVG, aucune image externe.
+ *
+ * Interactif : tilt 3D au mouvement de souris. Désactivé pour les utilisateurs
+ * `prefers-reduced-motion` (Framer Motion gère ça automatiquement via le
+ * `MotionConfig` global si défini, sinon le spring reste subtil).
  */
 export default function HeroPhoneMockup() {
+  const wrapRef = useRef<HTMLDivElement>(null)
+
+  // Mouse-driven rotation values. Spring smoothes the response.
+  const rotateX = useSpring(useMotionValue(0), { stiffness: 160, damping: 18 })
+  const rotateY = useSpring(useMotionValue(0), { stiffness: 160, damping: 18 })
+
+  // Light shimmer offset based on tilt, so glare follows mouse subtly.
+  const shimmerX = useTransform(rotateY, [-12, 12], ["30%", "70%"])
+  const shimmerY = useTransform(rotateX, [-12, 12], ["70%", "30%"])
+
+  const handleMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = wrapRef.current
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    const x = (e.clientX - rect.left) / rect.width // 0..1
+    const y = (e.clientY - rect.top) / rect.height // 0..1
+    // Max ~12deg tilt, inverted for natural feel
+    rotateY.set((x - 0.5) * 24)
+    rotateX.set(-(y - 0.5) * 18)
+  }
+
+  const handleLeave = () => {
+    rotateX.set(0)
+    rotateY.set(0)
+  }
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 40, rotate: -2 }}
-      animate={{ opacity: 1, y: 0, rotate: 0 }}
+      ref={wrapRef}
+      onMouseMove={handleMove}
+      onMouseLeave={handleLeave}
+      initial={{ opacity: 0, y: 40 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 1.1, delay: 0.3, ease: EASE.outExpo }}
       style={{
         width: 280,
         height: 580,
         flexShrink: 0,
         position: "relative",
+        perspective: 1200,
+        cursor: "grab",
       }}
     >
-      {/* Floating animation subtile */}
+      {/* Couche float verticale (subtile) */}
       <motion.div
-        animate={{ y: [0, -8, 0] }}
+        animate={{ y: [0, -6, 0] }}
         transition={{ duration: 5, ease: "easeInOut", repeat: Infinity }}
-        style={{
-          width: "100%",
-          height: "100%",
-          position: "relative",
-        }}
+        style={{ width: "100%", height: "100%", position: "relative" }}
       >
         {/* Halo derrière le phone */}
         <div
@@ -44,8 +76,8 @@ export default function HeroPhoneMockup() {
           }}
         />
 
-        {/* Frame du phone */}
-        <div
+        {/* Frame du phone — tilt 3D appliqué ici */}
+        <motion.div
           style={{
             position: "relative",
             width: "100%",
@@ -57,8 +89,28 @@ export default function HeroPhoneMockup() {
               "0 0 0 1.5px rgba(255,255,255,0.10), " +
               "0 30px 60px -15px rgba(0,0,0,0.7), " +
               "0 0 80px -20px rgba(99,102,241,0.5)",
+            rotateX,
+            rotateY,
+            transformStyle: "preserve-3d",
           }}
         >
+          {/* Reflet/glare qui suit le tilt */}
+          <motion.div
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              inset: 0,
+              borderRadius: 42,
+              background: useTransform(
+                [shimmerX, shimmerY],
+                ([x, y]) =>
+                  `radial-gradient(circle at ${x} ${y}, rgba(255,255,255,0.08), transparent 45%)`
+              ),
+              pointerEvents: "none",
+              mixBlendMode: "screen",
+            }}
+          />
+
           {/* Écran */}
           <div
             style={{
@@ -147,12 +199,12 @@ export default function HeroPhoneMockup() {
               </h3>
             </div>
 
-            {/* Platform pills */}
+            {/* Platform pills — VRAIS logos */}
             <div style={{ padding: "0 16px 12px", display: "flex", gap: 6 }}>
-              <PlatformPill label="IG" color="#F472B6" selected />
-              <PlatformPill label="TT" color="#67E8F9" selected />
-              <PlatformPill label="LI" color="#60A5FA" selected />
-              <PlatformPill label="X" color="#94A3B8" selected />
+              <PlatformPill brand="instagram" selected />
+              <PlatformPill brand="tiktok" selected />
+              <PlatformPill brand="linkedin" selected />
+              <PlatformPill brand="x" selected />
             </div>
 
             {/* Composer textarea */}
@@ -308,32 +360,38 @@ export default function HeroPhoneMockup() {
               </button>
             </div>
           </div>
-        </div>
+        </motion.div>
       </motion.div>
     </motion.div>
   )
 }
 
 /* ─── pills + thumbnails ─── */
-function PlatformPill({ label, color, selected }: { label: string; color: string; selected?: boolean }) {
+type BrandKey = "instagram" | "tiktok" | "linkedin" | "x"
+
+const BRAND_META: Record<BrandKey, { label: string; color: string; bg: string }> = {
+  instagram: { label: "Instagram", color: "#F472B6", bg: "rgba(244,114,182,0.10)" },
+  tiktok:    { label: "TikTok",    color: "#67E8F9", bg: "rgba(103,232,249,0.10)" },
+  linkedin:  { label: "LinkedIn",  color: "#60A5FA", bg: "rgba(96,165,250,0.10)" },
+  x:         { label: "X",         color: "#E5E7EB", bg: "rgba(229,231,235,0.06)" },
+}
+
+function PlatformPill({ brand, selected }: { brand: BrandKey; selected?: boolean }) {
+  const meta = BRAND_META[brand]
   return (
     <div style={{
       flex: 1,
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      gap: 4,
-      height: 26,
+      height: 30,
       borderRadius: 8,
-      background: selected ? `${color}1A` : "rgba(255,255,255,0.03)",
-      border: `1px solid ${selected ? color + "55" : "var(--line-2)"}`,
-      color: selected ? color : "var(--text-3)",
-      fontSize: "0.6rem",
-      fontWeight: 700,
-      letterSpacing: "0.04em",
+      background: selected ? meta.bg : "rgba(255,255,255,0.03)",
+      border: `1px solid ${selected ? meta.color + "55" : "var(--line-2)"}`,
+      color: selected ? meta.color : "var(--text-3)",
       position: "relative",
     }}>
-      {label}
+      <BrandIcon brand={brand} color={selected ? meta.color : "currentColor"} />
       {selected && (
         <span style={{
           position: "absolute",
@@ -342,16 +400,48 @@ function PlatformPill({ label, color, selected }: { label: string; color: string
           width: 11,
           height: 11,
           borderRadius: "50%",
-          background: color,
+          background: meta.color,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          boxShadow: `0 0 8px ${color}88`,
+          boxShadow: `0 0 8px ${meta.color}88`,
         }}>
           <Check size={7} strokeWidth={3} color="#06070B" />
         </span>
       )}
     </div>
+  )
+}
+
+function BrandIcon({ brand, color }: { brand: BrandKey; color: string }) {
+  if (brand === "instagram") {
+    return (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-label="Instagram">
+        <rect x="2.5" y="2.5" width="19" height="19" rx="5" stroke={color} strokeWidth="1.6" />
+        <circle cx="12" cy="12" r="4.5" stroke={color} strokeWidth="1.6" />
+        <circle cx="17.5" cy="6.5" r="1.1" fill={color} />
+      </svg>
+    )
+  }
+  if (brand === "tiktok") {
+    return (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill={color} aria-label="TikTok">
+        <path d="M16.5 3h2.4c.4 1.95 1.55 3.18 3.6 3.55v2.45c-1.5 0-2.85-.42-4-1.2v5.85c0 3.65-2.9 6.6-6.5 6.6S5.5 17.3 5.5 13.65c0-3.5 2.7-6.35 6.1-6.55v2.55c-2 .2-3.55 1.85-3.55 3.95 0 2.25 1.8 4.05 4 4.05s4-1.8 4-4.05V3Z"/>
+      </svg>
+    )
+  }
+  if (brand === "linkedin") {
+    return (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill={color} aria-label="LinkedIn">
+        <path d="M4.98 3.5C4.98 4.88 3.86 6 2.48 6S0 4.88 0 3.5 1.12 1 2.5 1s2.48 1.12 2.48 2.5ZM.25 8h4.5v14H.25V8Zm7 0h4.32v1.92h.06c.6-1.14 2.07-2.34 4.26-2.34 4.56 0 5.4 3 5.4 6.9V22h-4.5v-6.2c0-1.48-.03-3.38-2.06-3.38-2.06 0-2.38 1.6-2.38 3.27V22H7.25V8Z"/>
+      </svg>
+    )
+  }
+  // X / Twitter
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill={color} aria-label="X">
+      <path d="M18.244 2H21.5l-7.49 8.56L23 22h-6.84l-5.36-7-6.13 7H1.41l8.01-9.16L1 2h7.01l4.85 6.4L18.244 2Zm-1.2 18h1.86L7.04 4H5.04l12 16Z"/>
+    </svg>
   )
 }
 
