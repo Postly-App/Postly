@@ -20,7 +20,7 @@ import {
 } from "../social-token-crypto"
 import { logger } from "@/lib/logger"
 import { publishErrorMeta } from "./retry-policy"
-import { ConcurrentPublishInProgressError } from "./errors"
+import { ConcurrentPublishInProgressError, PostNotPublishableError } from "./errors"
 
 const AUTO_PUBLISH_PLATFORMS: ReadonlySet<PlatformId> = new Set([
   "TWITTER",
@@ -136,7 +136,7 @@ export async function publishPost(
   }
 
   if (claim.kind === "not_eligible") {
-    throw new Error("Post not found")
+    throw new PostNotPublishableError("Post not found")
   }
 
   const post = claim.post

@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getStripe } from "@/lib/stripe"
 import { logger } from "@/lib/logger"
+import { resolveUseSecureCookies } from "@/lib/env/auth"
 
 /**
  * Suppression définitive du compte (droit à l'oubli RGPD).
@@ -70,7 +71,30 @@ export async function POST(req: Request) {
     await prisma.user.delete({ where: { id: userId } })
 
     logger.audit("user.deleted", { route: "/api/user/delete", userId })
-    return NextResponse.json({ success: true })
+
+    // Invalide la session JWT côté client : sans ça, le cookie reste valide
+    // jusqu'à expiration et les mutations cassent en 500 (FK violations
+    // contre un user inexistant en DB). On clear les deux noms de cookies
+    // possibles selon le contexte (secure vs non-secure).
+    const res = NextResponse.json({ success: true })
+    const secure = resolveUseSecureCookies()
+    const expiredOpts = {
+      maxAge: 0,
+      expires: new Date(0),
+      path: "/",
+      sameSite: "lax" as const,
+      httpOnly: true,
+      secure,
+    }
+    const sessionCookieName = secure
+      ? "__Secure-next-auth.session-token"
+      : "next-auth.session-token"
+    const csrfCookieName = secure
+      ? "__Host-next-auth.csrf-token"
+      : "next-auth.csrf-token"
+    res.cookies.set(sessionCookieName, "", expiredOpts)
+    res.cookies.set(csrfCookieName, "", expiredOpts)
+    return res
   } catch (err) {
     logger.error("user.delete_failed", { route: "/api/user/delete", userId, err })
     return NextResponse.json({ error: "Suppression impossible." }, { status: 500 })

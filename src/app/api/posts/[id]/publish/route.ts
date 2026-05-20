@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { publishPost, ConcurrentPublishInProgressError } from "@/lib/social"
+import { publishPost, ConcurrentPublishInProgressError, PostNotPublishableError } from "@/lib/social"
 import { logger } from "@/lib/logger"
 import { enforceRateLimit } from "@/lib/ratelimit"
 
@@ -34,6 +34,9 @@ export async function POST(
   } catch (error) {
     if (error instanceof ConcurrentPublishInProgressError) {
       return NextResponse.json({ error: error.message }, { status: 409 })
+    }
+    if (error instanceof PostNotPublishableError) {
+      return NextResponse.json({ error: error.message }, { status: 404 })
     }
     logger.error("api.posts.publish_failed", {
       route: "/api/posts/[id]/publish",
